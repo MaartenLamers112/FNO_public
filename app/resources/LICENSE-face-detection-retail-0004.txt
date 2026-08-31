@@ -1,0 +1,9 @@
+face-detection-retail-0004
+Copyright Intel Corporation
+
+Source:
+https://github.com/openvinotoolkit/open_model_zoo/tree/master/models/intel/face-detection-retail-0004
+
+Licensed under the Apache License, Version 2.0.
+See:
+https://www.apache.org/licenses/LICENSE-2.0
