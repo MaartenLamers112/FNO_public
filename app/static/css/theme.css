@@ -1,0 +1,31 @@
+:root {
+    color-scheme: light;
+
+    /* Visuele aansluiting op vortum-mullem.info. */
+    --font-family-base: Arial, Helvetica, sans-serif;
+
+    --color-primary: #1768ad;
+    --color-primary-hover: #0f5594;
+    --color-primary-soft: #eaf3fb;
+    --color-primary-contrast: #ffffff;
+    --color-heading: #07549a;
+
+    --color-page: #eef3f7;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f4f7fa;
+    --color-text: #1f2b33;
+    --color-text-muted: #60788e;
+    --color-border: #dce5ec;
+    --color-border-strong: #c2d0dc;
+
+    --color-success: #33974a;
+    --color-warning: #e39a24;
+    --color-danger: #d94b45;
+    --color-selection: #ffd740;
+
+    --header-height: 4.9rem;
+    --radius-small: 0.35rem;
+    --radius-medium: 0.62rem;
+    --shadow-small: 0 2px 8px rgb(20 62 94 / 9%);
+    --shadow-medium: 0 8px 22px rgb(20 62 94 / 15%);
+}

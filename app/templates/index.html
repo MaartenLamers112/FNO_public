@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Foto-overzicht | Foto Nummeraar Online
+{% endblock %}
+
+{% block content %}
+<section
+    id="landing-page"
+    class="landing-page"
+    aria-label="Foto-overzicht"
+    data-can-manage-publication="{{ 'true' if current_user.is_authenticated and current_user.role.name == 'administrator' else 'false' }}"
+    data-can-view-comparison="{{ 'true' if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] else 'false' }}"
+>
+    <h1 class="visually-hidden">Foto-overzicht</h1>
+
+    <form class="landing-toolbar" role="search" onsubmit="return false;">
+        <label class="landing-search-field">
+            <span>Zoeken</span>
+            <input
+                id="photo-search"
+                type="search"
+                placeholder="Zoek op fotonummer, onderwerp, datering of plaats"
+                autocomplete="off"
+            >
+        </label>
+
+        <label>
+            <span>Status</span>
+            <select id="photo-status-filter">
+                <option value="">Alle statussen</option>
+                <option value="empty">Rood – leeg</option>
+                <option value="partial">Geel – gedeeltelijk</option>
+                <option value="complete">Groen – klaar</option>
+            </select>
+        </label>
+
+        <label>
+            <span>Plaats</span>
+            <select id="photo-location-filter">
+                <option value="">Alle plaatsen</option>
+            </select>
+        </label>
+
+        <label>
+            <span>Sorteren op</span>
+            <select id="photo-sort">
+                <option value="photo_number">Fotonummer</option>
+                <option value="subject">Onderwerp</option>
+                <option value="date">Datering</option>
+                <option value="location">Plaats</option>
+                <option value="status">Status</option>
+            </select>
+        </label>
+
+        <label>
+            <span>Volgorde</span>
+            <select id="photo-sort-direction">
+                <option value="asc">Oplopend</option>
+                <option value="desc">Aflopend</option>
+            </select>
+        </label>
+
+        <fieldset class="view-switcher">
+            <legend>Weergave</legend>
+            <button type="button" class="view-button" data-view="small" aria-label="Kleine thumbnails" title="Kleine thumbnails">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 10h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM3 17h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4z"/></svg>
+            </button>
+            <button type="button" class="view-button" data-view="medium" aria-label="Middelgrote thumbnails" title="Middelgrote thumbnails">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg>
+            </button>
+            <button type="button" class="view-button" data-view="large" aria-label="Grote thumbnails" title="Grote thumbnails">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3z"/></svg>
+            </button>
+            <button type="button" class="view-button" data-view="list" aria-label="Lijstweergave" title="Lijstweergave">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h3v3H3zm5 0h13v3H8zM3 10.5h3v3H3zm5 0h13v3H8zM3 17h3v3H3zm5 0h13v3H8z"/></svg>
+            </button>
+        </fieldset>
+    </form>
+
+    <p id="landing-loading" class="landing-status-message" hidden>
+        Foto's laden…
+    </p>
+
+    <p id="landing-error" class="landing-error-message" role="alert" hidden></p>
+
+    <div id="photo-results" class="photo-grid photo-grid--medium"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script
+    type="module"
+    src="{{ url_for('static', filename='js/landing/index-page.js') }}"
+></script>
+{% endblock %}

@@ -1,0 +1,11 @@
+<nav class="admin-tabs" aria-label="Beheeronderdelen">
+    <a class="admin-tab{% if admin_tab == 'dashboard' %} admin-tab--active{% endif %}" href="{{ url_for('web.admin_dashboard') }}">Dashboard</a>
+    {% if current_user.role.name == 'administrator' %}
+        <a class="admin-tab{% if admin_tab == 'import' %} admin-tab--active{% endif %}" href="{{ url_for('web.admin_import_photos') }}">Import</a>
+    {% endif %}
+    {% if current_user.role.name == 'administrator' %}
+        <a class="admin-tab{% if admin_tab == 'users' %} admin-tab--active{% endif %}" href="{{ url_for('web.admin_users') }}">Gebruikers</a>
+    {% endif %}
+    <a class="admin-tab{% if admin_tab == 'history' %} admin-tab--active{% endif %}" href="{{ url_for('web.admin_history') }}">Historie</a>
+    <span class="admin-tab admin-tab--disabled" title="Wordt later toegevoegd">Instellingen</span>
+</nav>

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Foto uit MM toevoegen | Foto Nummeraar Online{% endblock %}
+
+{% block content %}
+<section class="admin-form-page" aria-labelledby="add-photo-title">
+    <div class="dashboard-heading">
+        <div>
+            <p class="dashboard-eyebrow">Beheeromgeving</p>
+            <h1 id="add-photo-title">Foto uit Maior Memorix toevoegen</h1>
+        </div>
+        <a class="secondary-button" href="{{ url_for('web.admin_dashboard') }}">
+            Terug naar dashboard
+        </a>
+    </div>
+
+    <form class="admin-form" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label for="mm-id">Maior Memorix-ID</label>
+        <input
+            id="mm-id"
+            name="mm_id"
+            type="text"
+            required
+            autocomplete="off"
+            value="{{ request.form.get('mm_id', '') }}"
+        >
+        <p class="field-help">Gebruik de volledige stabiele record-ID uit Maior Memorix.</p>
+
+        <label for="photo-number">Fotonummer</label>
+        <input
+            id="photo-number"
+            name="photo_number"
+            type="text"
+            required
+            autocomplete="off"
+            value="{{ request.form.get('photo_number', '') }}"
+        >
+
+        <div class="admin-form-actions">
+            <button class="primary-button" type="submit">Als concept toevoegen</button>
+            <a class="secondary-button" href="{{ url_for('web.admin_dashboard') }}">Annuleren</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

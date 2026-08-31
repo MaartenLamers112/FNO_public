@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Privacy | Foto Nummeraar Online{% endblock %}
+{% block content %}
+<article class="information-page">
+<h1>Privacy en persoonsgegevens</h1>
+<p>Foto Nummeraar Online (FNO) helpt bij het beschrijven van historische foto's. Daarbij kunnen namen en opmerkingen over herkenbare personen worden vastgelegd.</p>
+<h2>Welke gegevens gebruikt FNO?</h2>
+<ul><li>namen en opmerkingen die bezoekers, medewerkers of beheerders invoeren;</li><li>labelposities op foto's;</li><li>wijzigingshistorie en, bij ingelogde gebruikers, de gebruikersnaam;</li><li>bronmetadata en afbeeldingen die live uit Maior Memorix worden getoond.</li></ul>
+<h2>Doel en grondslag</h2>
+<p>De gegevens worden gebruikt voor historisch en heemkundig onderzoek, identificatie en verbetering van collectiebeschrijvingen. De verantwoordelijke organisatie bepaalt de toepasselijke AVG-grondslag.</p>
+<h2>Bewaren en delen</h2>
+<p>Foto's worden niet door FNO gekopieerd. FNO-gegevens worden alleen bewaard zolang dit voor het historische project en de audittrail nodig is. Gegevens worden niet automatisch naar Maior Memorix geschreven.</p>
+<h2>Uw rechten</h2>
+<p>U kunt vragen om inzage, correctie of verwijdering van persoonsgegevens. Vermeld daarbij het fotonummer en zo precies mogelijk om welke informatie het gaat.</p>
+<p><a class="primary-button" href="{{ url_for('web.contact_page') }}">Contact opnemen</a></p>
+</article>
+{% endblock %}

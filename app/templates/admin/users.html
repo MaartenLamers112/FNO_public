@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Gebruikers | Foto Nummeraar Online{% endblock %}
+{% block body_class %}admin-page-body{% endblock %}
+{% block content %}
+<section class="admin-workspace" aria-labelledby="users-title">
+    {% set admin_tab = 'users' %}
+    {% include 'admin/_navigation.html' %}
+
+    <section class="admin-dashboard-main">
+        <div class="admin-section-heading">
+            <div><h2 id="users-title">Gebruikers</h2><p>Beheer medewerkers en beheerders.</p></div>
+        </div>
+
+        <form class="admin-form user-create-form" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="create">
+            <h3>Gebruiker toevoegen</h3>
+            <label>Gebruikersnaam <input name="username" required></label>
+            <label>Rol
+                <select name="role"><option value="employee">Medewerker</option><option value="administrator">Beheerder</option></select>
+            </label>
+            <label>Wachtwoord <input name="password" type="password" minlength="4" required></label>
+            <button class="primary-button" type="submit">Toevoegen</button>
+        </form>
+
+        <div class="user-management-list">
+            {% for user in users %}
+                <article class="user-management-card">
+                    <form method="post" class="user-edit-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="update">
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <label>Gebruikersnaam <input name="username" value="{{ user.username }}" required></label>
+                        <label>Rol
+                            <select name="role">
+                                <option value="employee"{% if user.role.name == 'employee' %} selected{% endif %}>Medewerker</option>
+                                <option value="administrator"{% if user.role.name == 'administrator' %} selected{% endif %}>Beheerder</option>
+                            </select>
+                        </label>
+                        <label class="user-active-control"><input name="is_active" type="checkbox"{% if user.is_active %} checked{% endif %}> Actief</label>
+                        <button class="secondary-button" type="submit">Opslaan</button>
+                    </form>
+                    <form method="post" class="user-reset-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="reset_password">
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <label>Nieuw wachtwoord <input name="password" type="password" minlength="4" required></label>
+                        <button class="secondary-button" type="submit">Wachtwoord resetten</button>
+                    </form>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+</section>
+{% endblock %}

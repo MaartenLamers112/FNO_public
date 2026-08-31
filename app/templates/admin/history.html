@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Historie – FNO{% endblock %}
+{% block body_class %}admin-page-body{% endblock %}
+{% block content %}
+<section class="admin-workspace history-page">
+{% set admin_tab = 'history' %}
+{% include 'admin/_navigation.html' %}
+<div class="admin-section-heading"><div><h2>Volledige historie</h2><p>Doorzoek alle geregistreerde wijzigingen.</p></div><a class="secondary-button" href="{{ url_for('web.admin_history_csv', **request.args) }}">Export CSV</a></div>
+<form method="get" class="history-filter-form">
+<input name="photo_number" value="{{ filters.get('photo_number','') }}" placeholder="Fotonummer">
+<input name="username" value="{{ filters.get('username','') }}" placeholder="Gebruiker">
+<input name="event_type" value="{{ filters.get('event_type','') }}" placeholder="Wijzigingstype">
+<input type="date" name="started_at" value="{{ filters.get('started_at','') }}">
+<input type="date" name="ended_at" value="{{ filters.get('ended_at','') }}">
+<button class="primary-button" type="submit">Filteren</button>
+</form>
+<div class="history-table-wrap"><table class="history-table"><thead><tr><th>Datum/tijd</th><th>Foto</th><th>Gebruiker</th><th>Wijziging</th><th>Oud</th><th>Nieuw</th></tr></thead><tbody>
+{% for item in items %}<tr><td>{{ item.created_at.strftime('%d-%m-%Y %H:%M') }}</td><td>{{ item.photo.photo_number }}</td><td>{{ item.user.username if item.user else '—' }}</td><td><strong>{{ item.description }}</strong><br><small>{{ item.event_type }}</small></td><td>{{ item.old_value or '—' }}</td><td>{{ item.new_value or '—' }}</td></tr>{% else %}<tr><td colspan="6">Geen wijzigingen gevonden.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

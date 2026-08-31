@@ -1,0 +1,25 @@
+<section class="help-section">
+    <h3>De foto bekijken</h3>
+    <ol class="help-steps">
+        <li>Gebruik het muiswiel om in en uit te zoomen.</li>
+        <li>Houd de muisknop ingedrukt en sleep om de foto te verplaatsen.</li>
+        <li>Gebruik de pijlen naast het fotonummer voor de vorige of volgende foto.</li>
+    </ol>
+    <h3>Namen en opmerkingen</h3>
+    <p>Klik op een label of een naamregel. Typ de naam en druk op Enter om naar de volgende persoon te gaan.</p>
+    {% if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] %}
+        <h3>Labels beheren</h3>
+        <ol class="help-steps">
+            <li><strong>Label toevoegen</strong> plaatst handmatig een label.</li>
+            <li><strong>Auto label</strong> zoekt gezichten en voegt alleen ontbrekende labels toe.</li>
+            <li><strong>Hernummeren</strong> nummert van boven naar beneden en per rij van links naar rechts.</li>
+            <li><strong>Weergave</strong> kiest Nummers, v.l.n.r. of 1 persoon voor deze foto.</li>
+            <li><strong>Labelgrootte</strong> is per foto instelbaar van 5 tot en met 30 via min, slider, invoerveld of plus.</li>
+            <li>Kies bij <strong>v.l.n.r.</strong> ook het aantal personen. Boven de naamvelden staat dan <strong>Van links naar rechts</strong>.</li>
+            <li>Pas de labelgrootte direct aan met de min-knop, slider of plus-knop.</li>
+            <li>Gebruik de pijltjes bij een naam om één persoon handmatig te verplaatsen.</li>
+        </ol>
+        <h3>Export</h3>
+        <p>TXT en CSV bevatten de ingevulde gegevens. Bij v.l.n.r.-weergave wordt die volgorde ook in de exports gebruikt. De foto-export bevat alleen nummerlabels wanneer de foto op Nummers staat.</p>
+    {% endif %}
+</section>

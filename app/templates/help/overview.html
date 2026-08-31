@@ -1,0 +1,15 @@
+<section class="help-section">
+    <h3>Foto's zoeken en openen</h3>
+    <ol class="help-steps">
+        <li>Typ een woord, naam, plaats of fotonummer in het zoekvak.</li>
+        <li>Kies eventueel een status of plaats om de lijst kleiner te maken.</li>
+        <li>Klik op een foto om deze te openen.</li>
+    </ol>
+    <h3>Weergave aanpassen</h3>
+    <p>Met de vier knoppen rechts kiest u kleine, middelgrote of grote foto's, of een lijst.</p>
+    <h3>Betekenis van de kleuren</h3>
+    <p>Rood betekent leeg, geel gedeeltelijk ingevuld en groen klaar.</p>
+    {% if current_user.is_authenticated %}
+        <p>De dubbele pijl toont of FNO overeenkomt met Maior Memorix. Oranje of rood betekent dat controle nodig is.</p>
+    {% endif %}
+</section>

@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}MM-import | Foto Nummeraar Online{% endblock %}
+{% block body_class %}admin-page-body{% endblock %}
+{% block content %}
+<section class="admin-workspace import-page" aria-labelledby="import-title">
+    {% set admin_tab = 'import' %}
+    {% include 'admin/_navigation.html' %}
+
+    <form class="admin-form admin-form--compact" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="admin-form-actions">
+            <button
+                class="secondary-button"
+                name="action"
+                value="supplement"
+                type="submit"
+                title="Vult alleen lege FNO-metadatavelden; bestaande FNO-inhoud blijft ongewijzigd"
+            >MM-gegevens aanvullen</button>
+            <span class="form-help-text">
+                Vult alleen lege FNO-velden vanuit MM en overschrijft nooit bestaande FNO-inhoud.
+            </span>
+        </div>
+    </form>
+
+    {% if preview %}
+        <div class="admin-summary-strip admin-summary-strip--compact">
+            <span><strong>{{ preview.found_count }}</strong> gevonden</span>
+            <span><strong>{{ preview.new_count }}</strong> nieuw op deze pagina</span>
+        </div>
+    {% endif %}
+
+    <form class="admin-form" method="post" data-import-filter-form>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="import-filter-grid">
+            {% for key, label in [('collection_part','Deelcollectie'),('collection','Collectie'),('place','Plaats'),('subject','Onderwerp')] %}
+                <label class="import-filter-field" for="filter-{{ key }}">
+                    <span>{{ label }}</span>
+                    <select id="filter-{{ key }}" name="{{ key }}">
+                        <option value="">Alle opties</option>
+                        {% for option in filter_options.get(key, []) %}
+                            <option value="{{ option }}"{% if filters.get(key) == option %} selected{% endif %}>{{ option }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            {% endfor %}
+            {% for key, label in [('title','Titel bevat'),('description','Beschrijving bevat'),('photo_number','Fotonummer'),('date','Datering')] %}
+                <label class="import-filter-field" for="filter-{{ key }}">
+                    <span>{{ label }}</span>
+                    <input id="filter-{{ key }}" name="{{ key }}" value="{{ filters.get(key, '') }}" autocomplete="off">
+                </label>
+            {% endfor %}
+        </div>
+        <div class="admin-form-actions">
+            <button class="primary-button" name="action" value="preview" type="submit">Voorvertoning ophalen</button>
+            <button
+                class="secondary-button"
+                name="action"
+                value="parser_analysis"
+                type="submit"
+                title="Analyseert alleen MM-beschrijvingen binnen de huidige filters en wijzigt geen gegevens"
+            >Parseranalyse downloaden</button>
+            <span class="form-help-text">
+                Read-only analyse van MM-beschrijvingen binnen de gekozen filters.
+            </span>
+        </div>
+    </form>
+
+    {% if import_job and import_job.imported_count %}
+        <div class="message-panel import-success-panel">
+            <strong>{{ import_job.imported_count }} conceptfoto's toegevoegd.</strong>
+            <a class="secondary-button" href="{{ url_for('web.index') }}">Bekijk foto-overzicht</a>
+        </div>
+    {% endif %}
+
+    {% if preview %}
+    <section class="import-preview" aria-labelledby="preview-title" data-import-preview>
+        <h2 id="preview-title">Voorvertoning</h2>
+        <p class="import-summary-line" aria-live="polite">
+            <strong>{{ preview.found_count }}</strong> gevonden ·
+            pagina <strong>{{ preview.page }}</strong> van <strong>{{ preview.page_count }}</strong> ·
+            <strong>{{ preview.new_count }}</strong> nieuw ·
+            <strong>{{ preview.existing_count }}</strong> aanwezig ·
+            <strong>{{ preview.invalid_count }}</strong> ongeldig ·
+            <strong data-selected-count-summary>0</strong> geselecteerd
+        </p>
+
+        <form method="post" data-import-form>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% for key, value in filters.items() %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endfor %}
+            <input type="hidden" name="page" value="{{ preview.page }}">
+
+            {% if preview.page_count > 1 %}
+                <nav class="import-pagination" aria-label="Pagina's met MM-resultaten">
+                    <button
+                        class="secondary-button"
+                        type="submit"
+                        name="page_target"
+                        value="{{ preview.page - 1 }}"
+                        {% if preview.page <= 1 %}disabled{% endif %}
+                    >Vorige 100</button>
+                    <span>Pagina {{ preview.page }} van {{ preview.page_count }}</span>
+                    <button
+                        class="secondary-button"
+                        type="submit"
+                        name="page_target"
+                        value="{{ preview.page + 1 }}"
+                        {% if preview.page >= preview.page_count %}disabled{% endif %}
+                    >Volgende 100</button>
+                </nav>
+            {% endif %}
+
+            <div class="import-selection-toolbar">
+                <div class="import-selection-actions">
+                    <button class="secondary-button" type="button" data-select-visible>Alle zichtbare selecteren</button>
+                    <button class="secondary-button" type="button" data-clear-selection>Selectie wissen</button>
+                </div>
+                <p class="import-selection-summary" aria-live="polite">
+                    <strong data-visible-count>{{ preview.new_count }}</strong> zichtbaar ·
+                    <strong data-selected-count>0</strong> geselecteerd
+                </p>
+            </div>
+
+            <div class="import-results-table" role="region" aria-label="MM-resultaten" tabindex="0">
+                <table>
+                    <thead>
+                        <tr class="import-column-labels">
+                            <th class="import-checkbox-column">Selectie</th>
+                            <th class="import-thumbnail-column">Foto</th>
+                            <th>Fotonummer</th>
+                            <th>Titel</th>
+                            <th>Datering</th>
+                            <th>Plaats</th>
+                            <th>Onderwerp</th>
+                            <th>Deelcollectie</th>
+                            <th>Status</th>
+                        </tr>
+                        <tr class="import-column-filters">
+                            <th class="import-checkbox-column">
+                                <input type="checkbox" aria-label="Selecteer alle zichtbare nieuwe foto's" data-toggle-visible>
+                            </th>
+                            <th></th>
+                            <th><input type="search" aria-label="Filter op fotonummer" placeholder="Filter…" data-column-filter="photo-number"></th>
+                            <th><input type="search" aria-label="Filter op titel" placeholder="Filter…" data-column-filter="title"></th>
+                            <th><select aria-label="Filter op datering" data-column-filter="date"><option value="">Alle</option></select></th>
+                            <th><select aria-label="Filter op plaats" data-column-filter="location"><option value="">Alle</option></select></th>
+                            <th><select aria-label="Filter op onderwerp" data-column-filter="subject"><option value="">Alle</option></select></th>
+                            <th><select aria-label="Filter op deelcollectie" data-column-filter="collection-part"><option value="">Alle</option></select></th>
+                            <th>
+                                <select aria-label="Filter op status" data-column-filter="status">
+                                    <option value="">Alle</option>
+                                    <option value="new" selected>Nieuw</option>
+                                    <option value="existing">Al aanwezig</option>
+                                    <option value="invalid">Ongeldig</option>
+                                </select>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in preview.records %}
+                            {% set status = 'invalid' if not record.valid else ('existing' if record.exists else 'new') %}
+                            <tr
+                                data-import-record
+                                data-status="{{ status }}"
+                                data-photo-number="{{ record.photo_number|lower }}"
+                                data-title="{{ record.title|lower }}"
+                                data-date="{{ record.date }}"
+                                data-location="{{ record.location }}"
+                                data-subject="{{ record.subject }}"
+                                data-collection-part="{{ record.collection_part }}"
+                            >
+                                <td class="import-checkbox-column">
+                                    <input
+                                        type="checkbox"
+                                        name="selected_mm_ids"
+                                        value="{{ record.mm_id }}"
+                                        aria-label="Selecteer {{ record.photo_number or 'ongeldig record' }}"
+                                        data-record-checkbox
+                                        {% if status != 'new' %}disabled{% endif %}
+                                    >
+                                </td>
+                                <td class="import-thumbnail-column">
+                                    {% if record.thumbnail_url %}
+                                        <img class="import-thumbnail" src="{{ record.thumbnail_url }}" alt="" loading="lazy">
+                                    {% else %}
+                                        <span class="import-thumbnail-placeholder" aria-hidden="true">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.photo_id %}
+                                        <a href="{{ url_for('web.photo_page', photo_id=record.photo_id) }}">{{ record.photo_number }}</a>
+                                    {% else %}
+                                        {{ record.photo_number or '—' }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.title or '—' }}</td>
+                                <td>{{ record.date or '—' }}</td>
+                                <td>{{ record.location or '—' }}</td>
+                                <td>{{ record.subject or '—' }}</td>
+                                <td>{{ record.collection_part or '—' }}</td>
+                                <td>
+                                    {% if status == 'invalid' %}Ongeldig{% elif status == 'existing' %}Al aanwezig{% else %}Nieuw{% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if preview.new_count %}
+                <div class="admin-form-actions import-submit-actions">
+                    <button class="primary-button" name="action" value="import" type="submit" data-import-button>
+                        Importeer <span data-import-count>0</span> foto's
+                    </button>
+                </div>
+            {% endif %}
+        </form>
+    </section>
+    {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    <script type="module" src="{{ url_for('static', filename='js/admin/import-preview.js') }}"></script>
+{% endblock %}

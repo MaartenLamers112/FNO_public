@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Aanmelden | Foto Nummeraar Online{% endblock %}
+
+{% block content %}
+<section class="login-panel" aria-labelledby="login-title">
+    <h1 id="login-title">Aanmelden</h1>
+    <p class="login-introduction">
+        Meld je aan om toegang te krijgen tot de beheerfuncties van FNO.
+    </p>
+
+    <form method="post" class="login-form">
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+        >
+        <input
+            type="hidden"
+            name="next"
+            value="{{ next_url }}"
+        >
+
+        <label for="username">Gebruikersnaam</label>
+        <input
+            id="username"
+            name="username"
+            type="text"
+            autocomplete="username"
+            required
+            autofocus
+        >
+
+        <label for="password">Wachtwoord</label>
+        <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+        >
+
+        <button class="primary-button" type="submit">
+            Aanmelden
+        </button>
+    </form>
+</section>
+{% endblock %}

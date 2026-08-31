@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Beheer | Foto Nummeraar Online{% endblock %}
+{% block body_class %}admin-page-body{% endblock %}
+
+{% block content %}
+<section class="admin-workspace" aria-labelledby="dashboard-title">
+    {% set admin_tab = 'dashboard' %}
+    {% include 'admin/_navigation.html' %}
+
+    <div class="admin-summary-strip" aria-label="Beheersamenvatting">
+        <span><strong>{{ summary.concept_photos + summary.published_photos + summary.hidden_photos }}</strong> foto's</span>
+        <span><strong>{{ summary.published_photos }}</strong> gepubliceerd</span>
+        <span><strong>{{ summary.concept_photos }}</strong> concept</span>
+        <span><strong>{{ summary.hidden_photos }}</strong> verborgen</span>
+        <span><strong>{{ summary.open_comments }}</strong> open opmerkingen</span>
+    </div>
+
+    <section class="admin-dashboard-main" aria-labelledby="dashboard-title">
+        <div class="admin-section-heading">
+            <div>
+                <h2 id="dashboard-title">Belangrijke activiteiten</h2>
+                <p>Controleer grote wijzigingen en opvallende acties.</p>
+            </div>
+            <a class="secondary-button" href="{{ url_for('web.admin_history') }}">Volledige historie</a>
+        </div>
+
+        {% if summary.recent_activity %}
+            <ol class="audit-activity-list">
+                {% for item in summary.recent_activity %}
+                    <li>
+                        <span class="audit-activity-marker" aria-hidden="true">!</span>
+                        <div>
+                            <strong>{{ item.photo.photo_number }} · {{ item.description }}</strong>
+                            <span>{{ item.user.username if item.user else 'Systeem' }}</span>
+                        </div>
+                        <time datetime="{{ item.created_at.isoformat() }}">{{ item.created_at.strftime('%d-%m-%Y %H:%M') }}</time>
+                    </li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            <p class="empty-message">Er zijn geen belangrijke activiteiten geregistreerd.</p>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}

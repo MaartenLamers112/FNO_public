@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Contact | Foto Nummeraar Online{% endblock %}
+{% block content %}
+<article class="information-page">
+<h1>Contact</h1>
+<p>Neem contact op voor vragen, correcties, technische problemen of privacyverzoeken.</p>
+<h2>Vermeld bij een correctie</h2>
+<ul><li>het fotonummer;</li><li>het labelnummer of de naam;</li><li>de voorgestelde correctie;</li><li>eventueel de bron waarop de correctie is gebaseerd.</li></ul>
+<p><a class="primary-button" href="mailto:{{ config.get('CONTACT_EMAIL', 'info@vortum-mullem.info') }}">{{ config.get('CONTACT_EMAIL', 'info@vortum-mullem.info') }}</a></p>
+</article>
+{% endblock %}

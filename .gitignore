@@ -1,0 +1,32 @@
+# Virtuele omgevingen
+.venv/
+.venv-*/
+
+# Python- en testcaches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Lokale configuratie en gegevens
+.env
+instance/*
+!instance/.gitkeep
+logs/
+backups/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Lokale ontwikkeluitvoer
+ai_benchmark_output/
+ai_benchmark_output_v2/
+*.zip
+
+# Editorbestanden
+.vscode/
+.idea/

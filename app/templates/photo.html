@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Foto bekijken – Foto Nummeraar Online
+{% endblock %}
+
+{% block body_class %}photo-page-body{% endblock %}
+
+{% block content %}
+<div
+    id="photo-page"
+    class="photo-page"
+    data-photo-id="{{ photo_id }}"
+    data-can-manage-labels="{{ 'true' if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] else 'false' }}"
+    data-can-manage-publication="{{ 'true' if current_user.is_authenticated and current_user.role.name == 'administrator' else 'false' }}"
+    data-can-view-comparison="{{ 'true' if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] else 'false' }}"
+    data-viewer-prefix-url="{{ url_for('static', filename='vendor/openseadragon/images/') }}"
+>
+    <div class="photo-page-command-row">
+        <nav class="photo-navigation" aria-label="Fotonavigatie">
+            <a id="previous-photo-link" class="photo-navigation-arrow" href="#" aria-label="Vorige foto" title="Vorige foto" hidden>←</a>
+            <span class="photo-navigation-current">
+                <strong id="photo-title" class="photo-navigation-number">Foto</strong>
+                <span id="photo-progress-dot" class="photo-progress-dot" aria-label="Voortgang"></span>
+            </span>
+            <a id="next-photo-link" class="photo-navigation-arrow" href="#" aria-label="Volgende foto" title="Volgende foto" hidden>→</a>
+        </nav>
+
+        {% if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] %}
+            <div class="photo-label-toolbar" aria-label="Labelgereedschap">
+                <button id="toggle-label-placement" class="secondary-button compact-button" type="button" aria-pressed="false" title="Plaats handmatig een nieuw nummerlabel">Label toevoegen</button>
+                <button id="delete-person-label" class="secondary-button compact-button" type="button" disabled>Verwijder</button>
+                <button id="delete-all-person-labels" class="danger-button compact-button" type="button">Alles verwijderen</button>
+                <button id="detect-persons" class="secondary-button compact-button" type="button" title="Zoek gezichten en voeg alleen ontbrekende labels toe">Auto label</button>
+                <details class="photo-export-menu">
+                    <summary class="secondary-button compact-button">Export</summary>
+                    <div class="photo-export-menu-content">
+                        <button id="export-photo-labels" type="button">Foto met labels</button>
+                        <a id="export-photo-text" href="#">Alle gegevens als TXT</a>
+                        <a id="export-persons-csv" href="#">Alle gegevens als CSV</a>
+                        <a id="export-photo-json" href="#">Technische export als JSON</a>
+                    </div>
+                </details>
+                <button id="renumber-person-labels" class="secondary-button compact-button" type="button" title="Nummer labels van boven naar beneden en per rij van links naar rechts">Hernummeren</button>
+                <label class="person-display-mode-control" for="person-display-mode-select">
+                    <span>Weergave:</span>
+                    <select id="person-display-mode-select" aria-label="Weergave van personen">
+                        <option value="numbered">Nummers</option>
+                        <option value="left_to_right">v.l.n.r.</option>
+                        <option value="single_person">1 persoon</option>
+                    </select>
+                </label>
+                <label id="person-display-count-control" class="person-display-count-control" for="person-display-count-select" hidden>
+                    <span>Aantal:</span>
+                    <select id="person-display-count-select" aria-label="Aantal personen van links naar rechts">
+                        {% for count in range(2, 31) %}<option value="{{ count }}">{{ count }}</option>{% endfor %}
+                    </select>
+                </label>
+                <div class="label-size-control" aria-label="Lettergrootte van labels">
+                    <span>Label:</span>
+                    <button id="label-size-decrease" class="secondary-button compact-button label-size-button" type="button" aria-label="Label kleiner">−</button>
+                    <input id="label-size-range" type="range" min="5" max="30" step="1" value="14" aria-label="Lettergrootte van labels">
+                    <button id="label-size-increase" class="secondary-button compact-button label-size-button" type="button" aria-label="Label groter">+</button>
+                    <input id="label-size-value" class="label-size-value-input" type="number" min="5" max="30" step="1" value="14" aria-label="Labelgrootte invoeren">
+                </div>
+                {% if current_user.role.name == 'administrator' %}
+                    <span class="photo-toolbar-separator" aria-hidden="true"></span>
+                    <div class="photo-management-controls photo-management-controls--toolbar">
+                        <label><input id="photo-visible" type="checkbox"> Zichtbaar</label>
+                        <label><input id="photo-complete" type="checkbox"> Klaar</label>
+                        <button id="delete-photo-from-fno" class="danger-button compact-button" type="button">Verwijder uit FNO</button>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <section
+        id="loading-message"
+        class="message-panel"
+    >
+        Foto laden…
+    </section>
+
+    <section
+        id="error-message"
+        class="message-panel message-panel-error"
+        role="alert"
+        hidden
+    >
+        <span id="error-message-text"></span>
+        <button
+            id="dismiss-error-message"
+            class="message-dismiss-button"
+            type="button"
+            aria-label="Foutmelding sluiten"
+        >
+            ×
+        </button>
+    </section>
+
+    <div
+        id="photo-content"
+        class="photo-layout"
+        hidden
+    >
+        <aside class="photo-sidebar">
+            <section class="panel photo-details-panel">
+                <div class="metadata-form">
+                    <div class="metadata-row">
+                        <label for="photo-subject">Onderwerp</label>
+                        <input id="photo-subject" class="metadata-input" type="text">
+                        {% if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] %}
+                            <span class="metadata-comparison" data-comparison-field="subject" hidden>⇄</span>
+                        {% endif %}
+                    </div>
+                    <div class="metadata-row">
+                        <label for="photo-date">Datering</label>
+                        <input id="photo-date" class="metadata-input" type="text">
+                        {% if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] %}
+                            <span class="metadata-comparison" data-comparison-field="date" hidden>⇄</span>
+                        {% endif %}
+                    </div>
+                    <div class="metadata-row">
+                        <label for="photo-location">Locatie</label>
+                        <input id="photo-location" class="metadata-input" type="text">
+                        {% if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] %}
+                            <span class="metadata-comparison" data-comparison-field="location" hidden>⇄</span>
+                        {% endif %}
+                    </div>
+                    <div class="metadata-row metadata-row--description">
+                        <label for="photo-description">Beschrijving</label>
+                        <textarea id="photo-description" class="metadata-input metadata-textarea" rows="2"></textarea>
+                        {% if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] %}
+                            <span class="metadata-comparison" data-comparison-field="description" hidden>⇄</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel persons-panel">
+                <div class="panel-heading">
+                    <div>
+                        <h2>Personen</h2>
+                        <span id="save-status" class="save-status" aria-live="polite">Gereed</span>
+                    </div>
+
+
+                </div>
+
+                <p id="persons-display-hint" class="person-display-hint" hidden>Van links naar rechts</p>
+
+                <div class="persons-list-header" aria-hidden="true">
+                    <span id="persons-number-heading">Nr.</span>
+                    <span>Naam</span>
+                    <span></span>
+                </div>
+
+                <p
+                    id="persons-empty"
+                    class="empty-message"
+                    hidden
+                >
+                    Op deze foto zijn nog geen personen gelabeld.
+                </p>
+
+                <ol
+                    id="persons-list"
+                    class="persons-list"
+                ></ol>
+            </section>
+
+            <section class="panel comments-panel">
+                <div class="panel-heading">
+                    <h2 id="comments-title">Opmerkingen</h2>
+                    <span id="comment-save-status" class="save-status" aria-live="polite"></span>
+                </div>
+
+                <label for="comment-content" class="visually-hidden">Opmerkingen</label>
+                <textarea
+                    id="comment-content"
+                    class="comment-textarea"
+                    rows="3"
+                    placeholder="Selecteer een persoon en typ een opmerking…"
+                    disabled
+                ></textarea>
+            </section>
+        </aside>
+
+        <section class="viewer-panel">
+            <div
+                id="photo-viewer"
+                class="photo-viewer"
+                aria-label="Fotoweergave"
+            ></div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script
+    src="{{ url_for('static', filename='vendor/openseadragon/openseadragon.min.js') }}"
+></script>
+<script
+    type="module"
+    src="{{ url_for('static', filename='js/photo-page.js') }}"
+></script>
+{% endblock %}
