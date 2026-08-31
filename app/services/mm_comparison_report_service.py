@@ -78,6 +78,7 @@ class MmComparisonReportService:
                 )
                 continue
 
+            persons = self.person_repository.get_by_photo(photo.id)
             parsed = self.description_parser.parse(metadata.description_raw)
             comparison = self.comparison_service.compare_photo(
                 mm_data={
@@ -91,7 +92,7 @@ class MmComparisonReportService:
                     "description": photo.local_description or "",
                 },
                 mm_names=parsed.names,
-                fno_persons=self.person_repository.get_by_photo(photo.id),
+                fno_persons=persons,
                 names_reliable=parsed.reliable,
                 reason=parsed.reason,
             )
@@ -135,7 +136,7 @@ class MmComparisonReportService:
                     )
                 )
 
-            if photo.person_display_mode == "numbered":
+            if photo.person_display_mode == "numbered" and persons:
                 rows.extend(self._check_numbered_photo(photo.photo_number, photo.mm_id))
 
         return rows
@@ -206,13 +207,11 @@ class MmComparisonReportService:
             self.memorix_service.normalize_search_record(record)
             for record in records
         ]
-        exact_matches = [
-            record
-            for record in matches
-            if str(record.get("photo_number", "")).casefold()
+        if any(
+            str(record.get("photo_number", "")).casefold()
             == expected_number.casefold()
-        ]
-        if exact_matches:
+            for record in matches
+        ):
             return []
 
         return [
