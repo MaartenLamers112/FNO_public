@@ -148,8 +148,7 @@ def admin_import_photos():
             return Response(
                 report,
                 content_type=(
-                    "application/vnd.openxmlformats-officedocument."
-                    "spreadsheetml.sheet"
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 ),
                 headers={"Content-Disposition": f'attachment; filename="{filename}"'},
             )

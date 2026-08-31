@@ -46,7 +46,9 @@ def test_import_page_shows_aligned_read_only_actions(app, client, monkeypatch) -
     assert 'form="import-filter-form"' in text
 
 
-def test_administrator_can_download_mm_comparison_report(app, client, monkeypatch) -> None:
+def test_administrator_can_download_mm_comparison_report(
+    app, client, monkeypatch
+) -> None:
     """Beheerder kan het read-only Excel-vergelijkrapport downloaden."""
 
     with app.app_context():

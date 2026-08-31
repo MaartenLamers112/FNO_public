@@ -204,12 +204,10 @@ class MmComparisonReportService:
             rows=10,
         )
         matches = [
-            self.memorix_service.normalize_search_record(record)
-            for record in records
+            self.memorix_service.normalize_search_record(record) for record in records
         ]
         if any(
-            str(record.get("photo_number", "")).casefold()
-            == expected_number.casefold()
+            str(record.get("photo_number", "")).casefold() == expected_number.casefold()
             for record in matches
         ):
             return []
