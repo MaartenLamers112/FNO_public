@@ -14,11 +14,26 @@
                 name="action"
                 value="supplement"
                 type="submit"
-                title="Vult alleen lege FNO-metadatavelden; bestaande FNO-inhoud blijft ongewijzigd"
+                style="width: 15rem; min-height: 2.65rem"
+                title="Vult alleen lege FNO-velden vanuit MM en overschrijft nooit bestaande FNO-inhoud."
             >MM-gegevens aanvullen</button>
-            <span class="form-help-text">
-                Vult alleen lege FNO-velden vanuit MM en overschrijft nooit bestaande FNO-inhoud.
-            </span>
+            <button
+                class="secondary-button"
+                name="action"
+                value="parser_analysis"
+                type="submit"
+                form="import-filter-form"
+                style="width: 15rem; min-height: 2.65rem"
+                title="Read-only analyse van MM-beschrijvingen binnen de gekozen filters."
+            >Parseranalyse downloaden</button>
+            <button
+                class="secondary-button"
+                name="action"
+                value="comparison_report"
+                type="submit"
+                style="width: 15rem; min-height: 2.65rem"
+                title="Read-only vergelijking van alle geïmporteerde FNO-foto's met actuele MM-data."
+            >MM-vergelijkrapport</button>
         </div>
     </form>
 
@@ -29,7 +44,7 @@
         </div>
     {% endif %}
 
-    <form class="admin-form" method="post" data-import-filter-form>
+    <form id="import-filter-form" class="admin-form" method="post" data-import-filter-form>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="import-filter-grid">
             {% for key, label in [('collection_part','Deelcollectie'),('collection','Collectie'),('place','Plaats'),('subject','Onderwerp')] %}
@@ -52,16 +67,6 @@
         </div>
         <div class="admin-form-actions">
             <button class="primary-button" name="action" value="preview" type="submit">Voorvertoning ophalen</button>
-            <button
-                class="secondary-button"
-                name="action"
-                value="parser_analysis"
-                type="submit"
-                title="Analyseert alleen MM-beschrijvingen binnen de huidige filters en wijzigt geen gegevens"
-            >Parseranalyse downloaden</button>
-            <span class="form-help-text">
-                Read-only analyse van MM-beschrijvingen binnen de gekozen filters.
-            </span>
         </div>
     </form>
 
