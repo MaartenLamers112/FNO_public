@@ -37,10 +37,6 @@ class PersonRepositoryStub:
 class MemorixServiceStub:
     """Lever actuele MM-data zonder externe requests."""
 
-    def __init__(self, *, numbered_exists: bool = True) -> None:
-        self.numbered_exists = numbered_exists
-        self.search_calls: list[dict[str, str]] = []
-
     def get_metadata_record(
         self, mm_id: str
     ) -> tuple[dict[str, object], MemorixMetadata]:
@@ -56,26 +52,6 @@ class MemorixServiceStub:
                 description_raw="Groepsfoto.\n1. Jan Jansen",
             ),
         )
-
-    def search_records(
-        self, *, filters: dict[str, str], rows: int = 100
-    ) -> list[dict[str, object]]:
-        """Registreer de numbered-mode controle."""
-
-        self.search_calls.append(filters)
-        if not self.numbered_exists:
-            return []
-        return [{"fields": {"dc_identifier": [filters["dc_identifier"]]}}]
-
-    @staticmethod
-    def normalize_search_record(record: dict[str, object]) -> dict[str, object]:
-        """Normaliseer alleen het fotonummer voor deze test."""
-
-        fields = record["fields"]
-        assert isinstance(fields, dict)
-        value = fields["dc_identifier"]
-        assert isinstance(value, list)
-        return {"photo_number": value[0]}
 
 
 class ParserStub:
@@ -93,7 +69,7 @@ class ParserStub:
 
 
 def build_photo() -> Photo:
-    """Maak een numbered-mode foto met lokale metadata."""
+    """Maak een geïmporteerde numbered-mode foto met lokale metadata."""
 
     photo = Photo(
         mm_id="MM-1",
@@ -111,13 +87,12 @@ def build_photo() -> Photo:
 def test_report_contains_only_actionable_differences_and_mm_link() -> None:
     """Gelijke velden verdwijnen en verschillen krijgen een klikbare MM-link."""
 
-    memorix_service = MemorixServiceStub()
     service = MmComparisonReportService(
         photo_repository=PhotoRepositoryStub([build_photo()]),
         person_repository=PersonRepositoryStub([
             SimpleNamespace(label_number=1, current_name="Jan Jansen")
         ]),
-        memorix_service=memorix_service,
+        memorix_service=MemorixServiceStub(),
         description_parser=ParserStub(),
     )
 
@@ -127,7 +102,6 @@ def test_report_contains_only_actionable_differences_and_mm_link() -> None:
         ("Onderwerp", "FNO onderwerp", "MM onderwerp")
     ]
     assert rows[0].mm_url == "https://example.test/mm/MM-1"
-    assert memorix_service.search_calls == [{"dc_identifier": "A001n"}]
 
     workbook = load_workbook(BytesIO(service.build_xlsx()))
     sheet = workbook["Actiepunten"]
@@ -136,21 +110,19 @@ def test_report_contains_only_actionable_differences_and_mm_link() -> None:
     assert sheet["G2"].hyperlink.target == "https://example.test/mm/MM-1"
 
 
-def test_numbered_mode_reports_missing_n_photo() -> None:
-    """Een ontbrekende n-foto wordt als afzonderlijk actiepunt opgenomen."""
+def test_numbered_mode_does_not_add_unimported_mm_photo() -> None:
+    """Numbered-mode voegt geen niet-geïmporteerde n-variant toe aan het rapport."""
 
     service = MmComparisonReportService(
         photo_repository=PhotoRepositoryStub([build_photo()]),
         person_repository=PersonRepositoryStub([
             SimpleNamespace(label_number=1, current_name="Jan Jansen")
         ]),
-        memorix_service=MemorixServiceStub(numbered_exists=False),
+        memorix_service=MemorixServiceStub(),
         description_parser=ParserStub(),
     )
 
     rows = service.build_rows()
 
-    numbered_rows = [row for row in rows if row.field == "MM-foto"]
-    assert len(numbered_rows) == 1
-    assert numbered_rows[0].fno_value == "A001n"
-    assert numbered_rows[0].mm_value == "Niet gevonden"
+    assert all(row.photo_number == "A001" for row in rows)
+    assert all(row.field != "MM-foto" for row in rows)
