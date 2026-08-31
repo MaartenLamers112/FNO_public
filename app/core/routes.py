@@ -23,6 +23,7 @@ from app.services import (
     DashboardService,
     HistoryService,
     MemorixParserAnalysisService,
+    MmComparisonReportService,
     MmImportService,
     UserService,
 )
@@ -132,6 +133,23 @@ def admin_import_photos():
             return Response(
                 "\ufeff" + output.getvalue(),
                 content_type="text/csv; charset=utf-8",
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            )
+        except FNOError as error:
+            flash(str(error), "error")
+            return redirect(url_for("web.admin_import_photos"))
+
+    if action == "comparison_report":
+        try:
+            report = MmComparisonReportService().build_xlsx()
+            filename = (
+                f"mm_vergelijkrapport_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            )
+            return Response(
+                report,
+                content_type=(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ),
                 headers={"Content-Disposition": f'attachment; filename="{filename}"'},
             )
         except FNOError as error:

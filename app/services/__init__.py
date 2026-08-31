@@ -12,6 +12,10 @@ from app.services.memorix_parser_analysis_service import (
     MemorixParserAnalysisService,
 )
 from app.services.memorix_service import MemorixMetadata, MemorixService
+from app.services.mm_comparison_report_service import (
+    MmComparisonReportRow,
+    MmComparisonReportService,
+)
 from app.services.mm_import_service import (
     FILTER_FIELDS,
     ImportPreview,
@@ -49,6 +53,8 @@ __all__ = [
     "ImportPreview",
     "MetadataSupplementResult",
     "MmImportService",
+    "MmComparisonReportRow",
+    "MmComparisonReportService",
     "MemorixParserAnalysisRow",
     "MemorixParserAnalysisService",
 ]
