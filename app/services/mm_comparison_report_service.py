@@ -136,9 +136,6 @@ class MmComparisonReportService:
                     )
                 )
 
-            if photo.person_display_mode == "numbered" and persons:
-                rows.extend(self._check_numbered_photo(photo.photo_number, photo.mm_id))
-
         return rows
 
     def build_xlsx(self) -> bytes:
@@ -187,42 +184,6 @@ class MmComparisonReportService:
         output = BytesIO()
         workbook.save(output)
         return output.getvalue()
-
-    def _check_numbered_photo(
-        self,
-        photo_number: str,
-        mm_id: str,
-    ) -> list[MmComparisonReportRow]:
-        """Controleer of de bijbehorende n-foto voor numbered-mode in MM bestaat."""
-
-        if photo_number.casefold().endswith("n"):
-            return []
-
-        expected_number = f"{photo_number}n"
-        records = self.memorix_service.search_records(
-            filters={"dc_identifier": expected_number},
-            rows=10,
-        )
-        matches = [
-            self.memorix_service.normalize_search_record(record) for record in records
-        ]
-        if any(
-            str(record.get("photo_number", "")).casefold() == expected_number.casefold()
-            for record in matches
-        ):
-            return []
-
-        return [
-            MmComparisonReportRow(
-                photo_number=photo_number,
-                mm_id=mm_id,
-                action="Numbered-mode foto ontbreekt in MM",
-                field="MM-foto",
-                fno_value=expected_number,
-                mm_value="Niet gevonden",
-                mm_url="",
-            )
-        ]
 
     @staticmethod
     def _get_mm_url(fields: dict[str, Any]) -> str:
