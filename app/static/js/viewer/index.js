@@ -26,6 +26,7 @@ export function initializeViewer({
         throw new Error("De afbeeldingsbron ontbreekt.");
     }
 
+    configureDutchTooltips();
     destroyViewer();
 
     const viewer = window.OpenSeadragon({
@@ -48,6 +49,19 @@ export function initializeViewer({
         viewer,
         overlayManager,
     };
+}
+
+function configureDutchTooltips() {
+    const tooltips = {
+        ZoomIn: "Inzoomen",
+        ZoomOut: "Uitzoomen",
+        Home: "Hele foto",
+        FullPage: "Volledig scherm",
+    };
+
+    for (const [key, value] of Object.entries(tooltips)) {
+        window.OpenSeadragon.setString(`Tooltips.${key}`, value);
+    }
 }
 
 export function fitViewerToImage() {

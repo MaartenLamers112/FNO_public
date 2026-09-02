@@ -25,6 +25,7 @@ from app.services import (
     MemorixParserAnalysisService,
     MmComparisonReportService,
     MmImportService,
+    PhotoService,
     UserService,
 )
 
@@ -40,9 +41,29 @@ def index():
 
 @web_blueprint.get("/photos/<int:photo_id>")
 def photo_page(photo_id: int):
-    """Toon de fotopagina."""
+    """Stuur een bestaande technische ID-link door naar het fotonummer."""
 
-    return render_template("photo.html", photo_id=photo_id, help_context="photo")
+    photo = PhotoService().get(photo_id)
+    if photo is None:
+        return render_template("photo.html", photo_id=photo_id, help_context="photo")
+
+    return redirect(
+        url_for(
+            "web.photo_page_by_number",
+            photo_number=photo.photo_number,
+        )
+    )
+
+
+@web_blueprint.get("/photos/<photo_number>")
+def photo_page_by_number(photo_number: str):
+    """Toon de fotopagina via het stabiele fotonummer."""
+
+    photo = PhotoService().get_by_photo_number(photo_number)
+    if photo is None:
+        return render_template("photo.html", photo_id=0, help_context="photo"), 404
+
+    return render_template("photo.html", photo_id=photo.id, help_context="photo")
 
 
 @web_blueprint.get("/admin")

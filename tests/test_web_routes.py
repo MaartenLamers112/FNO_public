@@ -23,6 +23,65 @@ def test_photo_page_is_available(client) -> None:
     assert b'id="toggle-label-placement"' not in response.data
 
 
+def test_existing_photo_id_redirects_to_stable_photo_number(
+    client,
+    monkeypatch,
+) -> None:
+    """Een bestaande technische ID-link verwijst naar het fotonummer."""
+
+    class PhotoStub:
+        id = 42
+        photo_number = "A00319"
+
+    monkeypatch.setattr(
+        "app.core.routes.PhotoService.get",
+        lambda self, photo_id: PhotoStub() if photo_id == 42 else None,
+    )
+
+    response = client.get("/photos/42")
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/photos/A00319")
+
+
+def test_stable_photo_number_route_resolves_internal_id(client, monkeypatch) -> None:
+    """Een fotonummer-link opent de foto met de interne database-ID."""
+
+    class PhotoStub:
+        id = 42
+        photo_number = "A00319"
+
+    monkeypatch.setattr(
+        "app.core.routes.PhotoService.get_by_photo_number",
+        lambda self, photo_number: (PhotoStub() if photo_number == "A00319" else None),
+    )
+
+    response = client.get("/photos/A00319")
+
+    assert response.status_code == 200
+    assert b'data-photo-id="42"' in response.data
+
+
+def test_photo_links_use_stable_photo_number(client) -> None:
+    """Het overzicht koppelt foto's via het stabiele fotonummer."""
+
+    renderer = client.get("/static/js/landing/render.js")
+
+    assert b"encodeURIComponent(photo.photo_number)" in renderer.data
+    assert b"link.href = `/photos/${photo.id}`" not in renderer.data
+
+
+def test_openseadragon_tooltips_are_dutch(client) -> None:
+    """De standaard viewerknoppen hebben Nederlandse tooltips."""
+
+    viewer = client.get("/static/js/viewer/index.js")
+
+    assert b'ZoomIn: "Inzoomen"' in viewer.data
+    assert b'ZoomOut: "Uitzoomen"' in viewer.data
+    assert b'Home: "Hele foto"' in viewer.data
+    assert b'FullPage: "Volledig scherm"' in viewer.data
+
+
 def test_persons_panel_scrolls_independently(client) -> None:
     """Het personenpaneel scrolt zonder de fotopagina te verplaatsen."""
 

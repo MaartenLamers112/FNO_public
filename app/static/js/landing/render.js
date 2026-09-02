@@ -75,7 +75,7 @@ function createList(items, options) {
 
 function createPhotoLink(photo) {
     const link = document.createElement("a");
-    link.href = `/photos/${photo.id}`;
+    link.href = `/photos/${encodeURIComponent(photo.photo_number)}`;
     link.dataset.photoLink = "";
     return link;
 }
