@@ -17,11 +17,14 @@ class AuthorizationService:
     def can_contribute(self) -> bool:
         """Geef aan of de huidige gebruiker inhoud mag bijdragen."""
 
-        return self.has_any_role(
+        if not self.has_any_role(
             self.USER_ROLE,
             self.EMPLOYEE_ROLE,
             self.ADMINISTRATOR_ROLE,
-        )
+        ):
+            return False
+
+        return self._has_verified_email_when_required()
 
     def can_view_hidden_photos(self) -> bool:
         """Geef aan of verborgen foto's zichtbaar mogen zijn."""
@@ -47,12 +50,18 @@ class AuthorizationService:
         return self.can_administer()
 
     def require_contribution(self) -> None:
-        """Vereis minimaal een ingelogde FNO-gebruiker."""
+        """Vereis minimaal een geverifieerde ingelogde FNO-gebruiker."""
 
         if not current_user.is_authenticated:
             raise AuthorizationError(
                 "Aanmelden is vereist voor deze actie.",
                 code="AUTHENTICATION_REQUIRED",
+            )
+
+        if not self._has_verified_email_when_required():
+            raise AuthorizationError(
+                "Bevestig eerst je e-mailadres om wijzigingen te kunnen doen.",
+                code="EMAIL_VERIFICATION_REQUIRED",
             )
 
         if not self.can_contribute():
@@ -104,3 +113,13 @@ class AuthorizationService:
 
         role = getattr(current_user, "role", None)
         return role is not None and role.name in role_names
+
+    @staticmethod
+    def _has_verified_email_when_required() -> bool:
+        """Behoud legacyaccounts en vereis verificatie zodra e-mail bestaat."""
+
+        email = getattr(current_user, "email", None)
+        if email is None:
+            return True
+
+        return bool(getattr(current_user, "email_verified", False))

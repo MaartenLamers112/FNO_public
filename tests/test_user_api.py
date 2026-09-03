@@ -1,7 +1,7 @@
 """Tests voor de gebruikersbeheer-API."""
 
 from app.extensions import db
-from app.models import User
+from app.models import Role, User
 
 
 def test_admin_can_create_user(client, authenticated_admin) -> None:
@@ -69,6 +69,34 @@ def test_logged_in_user_can_change_own_password(
     assert response.status_code == 200
     user = db.session.get(User, 1)
     assert user.check_password("nieuw123") is True
+
+
+def test_regular_user_can_change_own_password(app, client) -> None:
+    """Een gewone gebruiker kan het eigen wachtwoord wijzigen."""
+
+    role = Role(name="user", description="Gebruiker")
+    user = User(
+        username="gebruiker",
+        email="gebruiker@example.nl",
+        email_verified=False,
+        role=role,
+    )
+    user.set_password("test")
+    db.session.add(user)
+    db.session.commit()
+    client.post(
+        "/login",
+        data={"username": "gebruiker", "password": "test"},
+    )
+
+    response = client.post(
+        "/api/users/me/password",
+        json={"current_password": "test", "new_password": "nieuw123"},
+        headers={"X-CSRFToken": "test-csrf-token"},
+    )
+
+    assert response.status_code == 200
+    assert db.session.get(User, user.id).check_password("nieuw123") is True
 
 
 def test_user_response_never_contains_password_hash(

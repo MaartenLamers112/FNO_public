@@ -5,8 +5,10 @@ from app.services.base_service import BaseService
 from app.services.comment_service import CommentService
 from app.services.comparison_service import ComparisonService
 from app.services.dashboard_service import DashboardService, DashboardSummary
+from app.services.email_verification_service import EmailVerificationService
 from app.services.export_service import ExportService, PhotoExport
 from app.services.history_service import HistoryService
+from app.services.mail_service import MailService
 from app.services.memorix_parser_analysis_service import (
     MemorixParserAnalysisRow,
     MemorixParserAnalysisService,
@@ -28,6 +30,7 @@ from app.services.person_detection_service import (
 )
 from app.services.person_service import PersonService
 from app.services.photo_service import PhotoService
+from app.services.registration_service import RegistrationService
 from app.services.role_service import RoleService
 from app.services.user_service import UserService
 
@@ -46,8 +49,11 @@ __all__ = [
     "ComparisonService",
     "DashboardService",
     "DashboardSummary",
+    "EmailVerificationService",
     "ExportService",
     "PhotoExport",
+    "MailService",
+    "RegistrationService",
     "UserService",
     "FILTER_FIELDS",
     "ImportPreview",

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Verificatiemail opnieuw sturen | Foto Nummeraar Online{% endblock %}
+
+{% block content %}
+<section class="login-panel" aria-labelledby="resend-title">
+    <h1 id="resend-title">Verificatiemail opnieuw sturen</h1>
+    <p class="login-introduction">
+        Vul het e-mailadres in waarmee je je hebt geregistreerd.
+    </p>
+
+    <form method="post" class="login-form">
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token() }}"
+        >
+
+        <label for="email">E-mailadres</label>
+        <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            required
+            autofocus
+        >
+
+        <button class="primary-button" type="submit">
+            Verificatiemail versturen
+        </button>
+    </form>
+</section>
+{% endblock %}

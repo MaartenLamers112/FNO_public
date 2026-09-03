@@ -11,7 +11,7 @@
     id="photo-page"
     class="photo-page"
     data-photo-id="{{ photo_id }}"
-    data-can-contribute="{{ 'true' if current_user.is_authenticated and current_user.role.name in ['user', 'employee', 'administrator'] else 'false' }}"
+    data-can-contribute="{{ 'true' if can_contribute else 'false' }}"
     data-can-manage-labels="{{ 'true' if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] else 'false' }}"
     data-can-manage-publication="{{ 'true' if current_user.is_authenticated and current_user.role.name == 'administrator' else 'false' }}"
     data-can-view-comparison="{{ 'true' if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] else 'false' }}"
@@ -110,28 +110,28 @@
                 <div class="metadata-form">
                     <div class="metadata-row">
                         <label for="photo-subject">Onderwerp</label>
-                        <input id="photo-subject" class="metadata-input" type="text"{% if not current_user.is_authenticated or current_user.role.name not in ['user', 'employee', 'administrator'] %} disabled{% endif %}>
+                        <input id="photo-subject" class="metadata-input" type="text"{% if not can_contribute %} disabled{% endif %}>
                         {% if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] %}
                             <span class="metadata-comparison" data-comparison-field="subject" hidden>⇄</span>
                         {% endif %}
                     </div>
                     <div class="metadata-row">
                         <label for="photo-date">Datering</label>
-                        <input id="photo-date" class="metadata-input" type="text"{% if not current_user.is_authenticated or current_user.role.name not in ['user', 'employee', 'administrator'] %} disabled{% endif %}>
+                        <input id="photo-date" class="metadata-input" type="text"{% if not can_contribute %} disabled{% endif %}>
                         {% if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] %}
                             <span class="metadata-comparison" data-comparison-field="date" hidden>⇄</span>
                         {% endif %}
                     </div>
                     <div class="metadata-row">
                         <label for="photo-location">Locatie</label>
-                        <input id="photo-location" class="metadata-input" type="text"{% if not current_user.is_authenticated or current_user.role.name not in ['user', 'employee', 'administrator'] %} disabled{% endif %}>
+                        <input id="photo-location" class="metadata-input" type="text"{% if not can_contribute %} disabled{% endif %}>
                         {% if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] %}
                             <span class="metadata-comparison" data-comparison-field="location" hidden>⇄</span>
                         {% endif %}
                     </div>
                     <div class="metadata-row metadata-row--description">
                         <label for="photo-description">Beschrijving</label>
-                        <textarea id="photo-description" class="metadata-input metadata-textarea" rows="2"{% if not current_user.is_authenticated or current_user.role.name not in ['user', 'employee', 'administrator'] %} disabled{% endif %}></textarea>
+                        <textarea id="photo-description" class="metadata-input metadata-textarea" rows="2"{% if not can_contribute %} disabled{% endif %}></textarea>
                         {% if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] %}
                             <span class="metadata-comparison" data-comparison-field="description" hidden>⇄</span>
                         {% endif %}

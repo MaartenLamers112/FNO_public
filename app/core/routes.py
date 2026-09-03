@@ -20,6 +20,7 @@ from flask_login import current_user
 from app.auth.decorators import admin_required, employee_required
 from app.exceptions import FNOError
 from app.services import (
+    AuthorizationService,
     DashboardService,
     HistoryService,
     MemorixParserAnalysisService,
@@ -45,7 +46,12 @@ def photo_page(photo_id: int):
 
     photo = PhotoService().get(photo_id)
     if photo is None:
-        return render_template("photo.html", photo_id=photo_id, help_context="photo")
+        return render_template(
+            "photo.html",
+            photo_id=photo_id,
+            can_contribute=AuthorizationService().can_contribute(),
+            help_context="photo",
+        )
 
     return redirect(
         url_for(
@@ -61,9 +67,22 @@ def photo_page_by_number(photo_number: str):
 
     photo = PhotoService().get_by_photo_number(photo_number)
     if photo is None:
-        return render_template("photo.html", photo_id=0, help_context="photo"), 404
+        return (
+            render_template(
+                "photo.html",
+                photo_id=0,
+                can_contribute=AuthorizationService().can_contribute(),
+                help_context="photo",
+            ),
+            404,
+        )
 
-    return render_template("photo.html", photo_id=photo.id, help_context="photo")
+    return render_template(
+        "photo.html",
+        photo_id=photo.id,
+        can_contribute=AuthorizationService().can_contribute(),
+        help_context="photo",
+    )
 
 
 @web_blueprint.get("/admin")

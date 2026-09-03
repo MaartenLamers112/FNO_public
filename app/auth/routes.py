@@ -7,8 +7,8 @@ from urllib.parse import urljoin, urlparse
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
-from app.exceptions import AuthorizationError, ValidationError
-from app.services import UserService
+from app.exceptions import AuthorizationError, ConflictError, ValidationError
+from app.services import RegistrationService, UserService
 
 auth_blueprint = Blueprint(
     "auth",
@@ -18,7 +18,7 @@ auth_blueprint = Blueprint(
 
 @auth_blueprint.route("/login", methods=["GET", "POST"])
 def login():
-    """Meld een medewerker of beheerder aan."""
+    """Meld een FNO-gebruiker aan."""
 
     if current_user.is_authenticated:
         return redirect(url_for("web.index"))
@@ -41,6 +41,79 @@ def login():
         "login.html",
         next_url=next_url or "",
     )
+
+
+@auth_blueprint.route("/register", methods=["GET", "POST"])
+def register():
+    """Registreer een nieuw openbaar gebruikersaccount."""
+
+    if current_user.is_authenticated:
+        return redirect(url_for("web.index"))
+
+    if request.method == "POST":
+        try:
+            RegistrationService().register(
+                username=request.form.get("username", ""),
+                email=request.form.get("email", ""),
+                password=request.form.get("password", ""),
+                password_confirmation=request.form.get("password_confirmation", ""),
+            )
+        except (ConflictError, ValidationError) as error:
+            flash(str(error), "error")
+        except RuntimeError:
+            flash(
+                "Het account is aangemaakt, maar de verificatiemail kon niet "
+                "worden verstuurd. Probeer de verificatiemail opnieuw te sturen.",
+                "error",
+            )
+            return redirect(url_for("auth.resend_verification"))
+        else:
+            flash(
+                "Je account is aangemaakt. Controleer je e-mail om het account "
+                "te bevestigen.",
+                "success",
+            )
+            return redirect(url_for("auth.login"))
+
+    return render_template("register.html")
+
+
+@auth_blueprint.get("/verify-email/<token>")
+def verify_email(token: str):
+    """Bevestig een e-mailadres via een tijdgebonden verificatielink."""
+
+    try:
+        RegistrationService().verify_email(token)
+    except ValidationError as error:
+        flash(str(error), "error")
+        return redirect(url_for("auth.resend_verification"))
+
+    flash("Je e-mailadres is bevestigd. Je kunt nu bijdragen aan FNO.", "success")
+    return redirect(url_for("auth.login"))
+
+
+@auth_blueprint.route("/verify-email/resend", methods=["GET", "POST"])
+def resend_verification():
+    """Stuur desgevraagd opnieuw een verificatiebericht."""
+
+    if request.method == "POST":
+        try:
+            RegistrationService().resend_verification(request.form.get("email", ""))
+        except RuntimeError:
+            flash(
+                "De verificatiemail kon niet worden verstuurd. "
+                "Probeer het later opnieuw.",
+                "error",
+            )
+        else:
+            flash(
+                "Als het e-mailadres bij een onbevestigd account hoort, is een "
+                "nieuwe verificatiemail verstuurd.",
+                "success",
+            )
+            return redirect(url_for("auth.login"))
+
+    return render_template("resend_verification.html")
 
 
 @auth_blueprint.route("/account/password", methods=["GET", "POST"])

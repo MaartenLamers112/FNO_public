@@ -74,6 +74,8 @@
                             <input id="header-login-password" name="password" type="password" autocomplete="current-password" required>
                             <button class="primary-button account-menu-submit" type="submit">Inloggen</button>
                         </form>
+                        <a class="account-menu-link" href="{{ url_for('auth.register') }}">Registreren</a>
+                        <a class="account-menu-link" href="{{ url_for('auth.resend_verification') }}">Verificatiemail opnieuw sturen</a>
                     {% endif %}
                 </div>
             </div>

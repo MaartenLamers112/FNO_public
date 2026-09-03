@@ -89,6 +89,12 @@ class UserRepository(BaseRepository[User]):
 
         return user
 
+    def set_email_verified(self, user: User, *, verified: bool) -> User:
+        """Werk de e-mailverificatiestatus bij."""
+
+        user.email_verified = verified
+        return user
+
     def update_last_login(
         self,
         user: User,

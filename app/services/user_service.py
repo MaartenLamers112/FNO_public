@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from app.exceptions import (
     AuthorizationError,
     ConflictError,
@@ -17,6 +19,9 @@ class UserService(BaseService[UserRepository]):
     """Bedrijfslogica rondom gebruikers en authenticatie."""
 
     MINIMUM_PASSWORD_LENGTH = 8
+    MAXIMUM_EMAIL_LENGTH = 320
+    EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
     USER_ROLE_NAME = "user"
     USER_ROLE_DESCRIPTION = "Gebruiker"
     EMPLOYEE_ROLE_NAME = "employee"
@@ -68,6 +73,29 @@ class UserService(BaseService[UserRepository]):
 
         return self.repository.get_all()
 
+    def register_user(
+        self,
+        *,
+        username: str,
+        email: str,
+        password: str,
+    ) -> User:
+        """Maak een openbaar geregistreerd gebruikersaccount aan."""
+
+        normalized_email = self._normalize_email(email)
+        if normalized_email is None:
+            raise ValidationError(
+                "E-mailadres is verplicht.",
+                code="EMAIL_REQUIRED",
+            )
+
+        return self.create_user(
+            username=username,
+            email=normalized_email,
+            password=password,
+            role_name=self.USER_ROLE_NAME,
+        )
+
     def create_user(
         self,
         *,
@@ -80,6 +108,10 @@ class UserService(BaseService[UserRepository]):
 
         normalized_username = username.strip()
         normalized_email = self._normalize_email(email)
+
+        if normalized_email is not None:
+            self._validate_email(normalized_email)
+
         self._validate_new_user(
             username=normalized_username,
             password=password,
@@ -236,6 +268,18 @@ class UserService(BaseService[UserRepository]):
                 "Het wachtwoord moet minimaal 8 tekens bevatten.",
                 code="PASSWORD_TOO_SHORT",
                 details={"minimum_length": self.MINIMUM_PASSWORD_LENGTH},
+            )
+
+    def _validate_email(self, email: str) -> None:
+        """Controleer globaal of een e-mailadres bruikbaar is."""
+
+        if (
+            len(email) > self.MAXIMUM_EMAIL_LENGTH
+            or self.EMAIL_PATTERN.fullmatch(email) is None
+        ):
+            raise ValidationError(
+                "Vul een geldig e-mailadres in.",
+                code="INVALID_EMAIL",
             )
 
     @staticmethod

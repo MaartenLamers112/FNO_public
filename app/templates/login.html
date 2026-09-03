@@ -6,7 +6,7 @@
 <section class="login-panel" aria-labelledby="login-title">
     <h1 id="login-title">Aanmelden</h1>
     <p class="login-introduction">
-        Meld je aan om toegang te krijgen tot de beheerfuncties van FNO.
+        Meld je aan om bij te dragen aan Foto Nummeraar Online.
     </p>
 
     <form method="post" class="login-form">
@@ -44,5 +44,14 @@
             Aanmelden
         </button>
     </form>
+
+    <p>
+        Nog geen account?
+        <a href="{{ url_for('auth.register') }}">Registreren</a>
+    </p>
+    <p>
+        Geen verificatiemail ontvangen?
+        <a href="{{ url_for('auth.resend_verification') }}">Opnieuw versturen</a>
+    </p>
 </section>
 {% endblock %}

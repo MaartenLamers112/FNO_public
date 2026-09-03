@@ -26,6 +26,16 @@ def get_database_uri() -> str:
     return f"sqlite:///{database_path}"
 
 
+def get_bool_env(name: str, default: bool = False) -> bool:
+    """Lees een booleaanse omgevingsvariabele."""
+
+    value = os.getenv(name)
+    if value is None:
+        return default
+
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 class BaseConfig:
     """Gemeenschappelijke configuratie voor alle omgevingen."""
 
@@ -42,6 +52,20 @@ class BaseConfig:
     MM_LANGUAGE = os.getenv("MM_LANGUAGE", "nl")
     MM_DATASET_SPEC = os.getenv("MM_DATASET_SPEC", "enb-119-beeldmateriaal")
     MM_TIMEOUT_SECONDS = float(os.getenv("MM_TIMEOUT_SECONDS", "10"))
+
+    PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:5000")
+    EMAIL_VERIFICATION_MAX_AGE_SECONDS = int(
+        os.getenv("EMAIL_VERIFICATION_MAX_AGE_SECONDS", "86400")
+    )
+
+    MAIL_SERVER = os.getenv("MAIL_SERVER")
+    MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
+    MAIL_USE_TLS = get_bool_env("MAIL_USE_TLS", True)
+    MAIL_USE_SSL = get_bool_env("MAIL_USE_SSL", False)
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+    MAIL_FROM = os.getenv("MAIL_FROM")
+    MAIL_SUPPRESS_SEND = get_bool_env("MAIL_SUPPRESS_SEND", False)
 
     PERSON_DETECTION_MODEL_PATH = os.getenv(
         "PERSON_DETECTION_MODEL_PATH",
@@ -85,6 +109,8 @@ class TestingConfig(BaseConfig):
     WTF_CSRF_ENABLED = False
     SECRET_KEY = "fno-test-secret-key"
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    PUBLIC_BASE_URL = "http://localhost"
+    MAIL_SUPPRESS_SEND = True
 
 
 class ProductionConfig(BaseConfig):

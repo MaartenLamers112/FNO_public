@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from flask import Blueprint
-from flask_login import current_user
+from flask_login import current_user, login_required
 
 from app.api.responses import api_list_response, api_response
 from app.api.validation import parse_json_request
-from app.auth.decorators import admin_required, employee_required
+from app.auth.decorators import admin_required
 from app.schemas import (
     OwnPasswordUpdate,
     UserCreate,
@@ -84,7 +84,7 @@ def reset_user_password(user_id: int):
 
 
 @users_blueprint.post("/me/password")
-@employee_required
+@login_required
 def change_own_password():
     """Wijzig het wachtwoord van de ingelogde gebruiker."""
 
