@@ -68,14 +68,28 @@ class UserService(BaseService[UserRepository]):
 
         return self.repository.get_all()
 
-    def create_user(self, *, username: str, password: str, role_name: str) -> User:
-        """Maak een medewerker of beheerder aan."""
+    def create_user(
+        self,
+        *,
+        username: str,
+        password: str,
+        role_name: str,
+        email: str | None = None,
+    ) -> User:
+        """Maak een gebruiker met een beheerde rol aan."""
 
         normalized_username = username.strip()
-        self._validate_new_user(username=normalized_username, password=password)
+        normalized_email = self._normalize_email(email)
+        self._validate_new_user(
+            username=normalized_username,
+            password=password,
+            email=normalized_email,
+        )
         role = self._get_managed_role(role_name)
         user = self.repository.create(
             username=normalized_username,
+            email=normalized_email,
+            email_verified=False,
             password_hash="tijdelijk",
             role_id=role.id,
         )
@@ -186,7 +200,13 @@ class UserService(BaseService[UserRepository]):
             self.role_repository.flush()
         return role
 
-    def _validate_new_user(self, *, username: str, password: str) -> None:
+    def _validate_new_user(
+        self,
+        *,
+        username: str,
+        password: str,
+        email: str | None,
+    ) -> None:
         """Valideer de gegevens voor een nieuwe gebruiker."""
 
         if not username:
@@ -200,6 +220,12 @@ class UserService(BaseService[UserRepository]):
                 code="USER_ALREADY_EXISTS",
                 details={"username": username},
             )
+        if email is not None and self.repository.exists_by_email(email):
+            raise ConflictError(
+                "Dit e-mailadres is al in gebruik.",
+                code="EMAIL_ALREADY_EXISTS",
+                details={"email": email},
+            )
         self._validate_password(password)
 
     def _validate_password(self, password: str) -> None:
@@ -211,3 +237,13 @@ class UserService(BaseService[UserRepository]):
                 code="PASSWORD_TOO_SHORT",
                 details={"minimum_length": self.MINIMUM_PASSWORD_LENGTH},
             )
+
+    @staticmethod
+    def _normalize_email(email: str | None) -> str | None:
+        """Normaliseer een optioneel e-mailadres."""
+
+        if email is None:
+            return None
+
+        normalized_email = email.strip().lower()
+        return normalized_email or None

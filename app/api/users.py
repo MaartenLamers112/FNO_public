@@ -24,6 +24,8 @@ def _response_data(user) -> dict[str, object]:
     return {
         "id": user.id,
         "username": user.username,
+        "email": user.email,
+        "email_verified": user.email_verified,
         "role": user.role.name,
         "is_active": user.is_active,
     }
@@ -43,11 +45,12 @@ def get_users():
 @users_blueprint.post("")
 @admin_required
 def create_user():
-    """Maak een medewerker of beheerder aan."""
+    """Maak een gebruiker aan."""
 
     payload = parse_json_request(UserCreate)
     user = UserService().create_user(
         username=payload.username,
+        email=payload.email,
         password=payload.password,
         role_name=payload.role,
     )

@@ -1,10 +1,10 @@
 """API-schema's voor gebruikersbeheer."""
 
-from __future__ import annotations
-
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
+
+UserRole = Literal["user", "employee", "administrator"]
 
 
 class UserResponse(BaseModel):
@@ -14,7 +14,9 @@ class UserResponse(BaseModel):
 
     id: int
     username: str
-    role: Literal["employee", "administrator"]
+    email: str | None
+    email_verified: bool
+    role: UserRole
     is_active: bool
 
 
@@ -22,15 +24,16 @@ class UserCreate(BaseModel):
     """Gegevens voor een nieuw gebruikersaccount."""
 
     username: str
+    email: str | None = None
     password: str
-    role: Literal["employee", "administrator"]
+    role: UserRole
 
 
 class UserUpdate(BaseModel):
     """Bewerkbare beheervelden van een gebruikersaccount."""
 
     username: str
-    role: Literal["employee", "administrator"]
+    role: UserRole
     is_active: bool
 
 

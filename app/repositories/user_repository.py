@@ -24,10 +24,22 @@ class UserRepository(BaseRepository[User]):
 
         return db.session.scalar(statement)
 
+    def get_by_email(self, email: str) -> User | None:
+        """Haal een gebruiker op via het unieke e-mailadres."""
+
+        statement = select(User).where(User.email == email)
+
+        return db.session.scalar(statement)
+
     def exists_by_username(self, username: str) -> bool:
         """Controleer of een gebruikersnaam al bestaat."""
 
         return self.exists_by(User.username, username)
+
+    def exists_by_email(self, email: str) -> bool:
+        """Controleer of een e-mailadres al bestaat."""
+
+        return self.exists_by(User.email, email)
 
     def create(
         self,
@@ -35,12 +47,16 @@ class UserRepository(BaseRepository[User]):
         username: str,
         password_hash: str,
         role_id: int,
+        email: str | None = None,
+        email_verified: bool = False,
         is_active: bool = True,
     ) -> User:
         """Maak een gebruiker aan en voeg deze toe aan de sessie."""
 
         user = User(
             username=username,
+            email=email,
+            email_verified=email_verified,
             password_hash=password_hash,
             role_id=role_id,
             is_active=is_active,

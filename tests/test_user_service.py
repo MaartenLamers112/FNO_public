@@ -113,6 +113,8 @@ def test_user_service_creates_administrator(app) -> None:
     )
 
     assert user.username == "beheerder"
+    assert user.email is None
+    assert user.email_verified is False
     assert user.role.name == "administrator"
     assert user.is_active is True
     assert user.check_password("zeer-veilig-wachtwoord") is True
@@ -159,13 +161,76 @@ def test_user_service_creates_employee(app) -> None:
 
     user = UserService().create_user(
         username=" nieuwe medewerker ",
+        email=" Medewerker@Example.NL ",
         password="veilig123",
         role_name="employee",
     )
 
     assert user.username == "nieuwe medewerker"
+    assert user.email == "medewerker@example.nl"
+    assert user.email_verified is False
     assert user.role.name == "employee"
     assert user.check_password("veilig123") is True
+
+
+def test_user_service_creates_regular_user(app) -> None:
+    """Gebruikersbeheer kan een gewone gebruiker aanmaken."""
+
+    user = UserService().create_user(
+        username="gebruiker",
+        email="gebruiker@example.nl",
+        password="veilig123",
+        role_name="user",
+    )
+
+    assert user.username == "gebruiker"
+    assert user.email == "gebruiker@example.nl"
+    assert user.role.name == "user"
+
+
+def test_user_service_rejects_duplicate_email(app) -> None:
+    """Een e-mailadres kan maar aan één account gekoppeld zijn."""
+
+    service = UserService()
+    service.create_user(
+        username="eerste",
+        email="gebruiker@example.nl",
+        password="veilig123",
+        role_name="user",
+    )
+
+    try:
+        service.create_user(
+            username="tweede",
+            email=" GEBRUIKER@example.nl ",
+            password="veilig123",
+            role_name="user",
+        )
+    except ConflictError as error:
+        assert error.code == "EMAIL_ALREADY_EXISTS"
+        assert error.details == {"email": "gebruiker@example.nl"}
+    else:
+        raise AssertionError("ConflictError verwacht.")
+
+
+def test_user_service_allows_multiple_users_without_email(app) -> None:
+    """Compatibele bestaande accounts mogen zonder e-mailadres bestaan."""
+
+    service = UserService()
+
+    first = service.create_user(
+        username="eerste",
+        password="veilig123",
+        role_name="employee",
+    )
+    second = service.create_user(
+        username="tweede",
+        password="veilig123",
+        role_name="employee",
+    )
+
+    assert first.email is None
+    assert second.email is None
 
 
 def test_user_service_updates_managed_user(app) -> None:

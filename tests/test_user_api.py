@@ -9,7 +9,12 @@ def test_admin_can_create_user(client, authenticated_admin) -> None:
 
     response = client.post(
         "/api/users",
-        json={"username": "nieuw", "password": "veilig123", "role": "employee"},
+        json={
+            "username": "nieuw",
+            "email": " Nieuw@Example.NL ",
+            "password": "veilig123",
+            "role": "employee",
+        },
         headers={"X-CSRFToken": "test-csrf-token"},
     )
 
@@ -17,9 +22,29 @@ def test_admin_can_create_user(client, authenticated_admin) -> None:
     assert response.get_json() == {
         "id": 2,
         "username": "nieuw",
+        "email": "nieuw@example.nl",
+        "email_verified": False,
         "role": "employee",
         "is_active": True,
     }
+
+
+def test_admin_can_create_regular_user(client, authenticated_admin) -> None:
+    """Een beheerder kan via de API een gewone gebruiker aanmaken."""
+
+    response = client.post(
+        "/api/users",
+        json={
+            "username": "gebruiker",
+            "email": "gebruiker@example.nl",
+            "password": "veilig123",
+            "role": "user",
+        },
+        headers={"X-CSRFToken": "test-csrf-token"},
+    )
+
+    assert response.status_code == 201
+    assert response.get_json()["role"] == "user"
 
 
 def test_employee_cannot_list_users(client, authenticated_employee) -> None:
