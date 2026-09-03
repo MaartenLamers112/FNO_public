@@ -10,8 +10,23 @@ from app.exceptions import AuthorizationError
 class AuthorizationService:
     """Controleer centraal of de huidige gebruiker een actie mag uitvoeren."""
 
+    USER_ROLE = "user"
     EMPLOYEE_ROLE = "employee"
     ADMINISTRATOR_ROLE = "administrator"
+
+    def can_contribute(self) -> bool:
+        """Geef aan of de huidige gebruiker inhoud mag bijdragen."""
+
+        return self.has_any_role(
+            self.USER_ROLE,
+            self.EMPLOYEE_ROLE,
+            self.ADMINISTRATOR_ROLE,
+        )
+
+    def can_view_hidden_photos(self) -> bool:
+        """Geef aan of verborgen foto's zichtbaar mogen zijn."""
+
+        return self.can_manage_labels()
 
     def can_manage_labels(self) -> bool:
         """Geef aan of de huidige gebruiker persoonslabels mag beheren."""
@@ -30,6 +45,21 @@ class AuthorizationService:
         """Geef aan of de huidige gebruiker publicatiestatus mag beheren."""
 
         return self.can_administer()
+
+    def require_contribution(self) -> None:
+        """Vereis minimaal een ingelogde FNO-gebruiker."""
+
+        if not current_user.is_authenticated:
+            raise AuthorizationError(
+                "Aanmelden is vereist voor deze actie.",
+                code="AUTHENTICATION_REQUIRED",
+            )
+
+        if not self.can_contribute():
+            raise AuthorizationError(
+                "Je hebt onvoldoende rechten voor deze actie.",
+                code="FORBIDDEN",
+            )
 
     def require_publication_management(self) -> None:
         """Vereis de beheerdersrol voor publicatiebeheer."""

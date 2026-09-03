@@ -16,12 +16,18 @@ from app.services.base_service import BaseService
 class UserService(BaseService[UserRepository]):
     """Bedrijfslogica rondom gebruikers en authenticatie."""
 
-    MINIMUM_PASSWORD_LENGTH = 4
+    MINIMUM_PASSWORD_LENGTH = 8
+    USER_ROLE_NAME = "user"
+    USER_ROLE_DESCRIPTION = "Gebruiker"
     EMPLOYEE_ROLE_NAME = "employee"
     EMPLOYEE_ROLE_DESCRIPTION = "Medewerker"
     ADMINISTRATOR_ROLE_NAME = "administrator"
     ADMINISTRATOR_ROLE_DESCRIPTION = "Beheerder"
-    MANAGED_ROLE_NAMES = {EMPLOYEE_ROLE_NAME, ADMINISTRATOR_ROLE_NAME}
+    MANAGED_ROLE_NAMES = {
+        USER_ROLE_NAME,
+        EMPLOYEE_ROLE_NAME,
+        ADMINISTRATOR_ROLE_NAME,
+    }
 
     def __init__(
         self,
@@ -168,12 +174,15 @@ class UserService(BaseService[UserRepository]):
             raise ValidationError("Ongeldige gebruikersrol.", code="INVALID_USER_ROLE")
         role = self.role_repository.get_by_name(role_name)
         if role is None:
-            description = (
-                self.ADMINISTRATOR_ROLE_DESCRIPTION
-                if role_name == self.ADMINISTRATOR_ROLE_NAME
-                else self.EMPLOYEE_ROLE_DESCRIPTION
+            descriptions = {
+                self.USER_ROLE_NAME: self.USER_ROLE_DESCRIPTION,
+                self.EMPLOYEE_ROLE_NAME: self.EMPLOYEE_ROLE_DESCRIPTION,
+                self.ADMINISTRATOR_ROLE_NAME: self.ADMINISTRATOR_ROLE_DESCRIPTION,
+            }
+            role = self.role_repository.create(
+                name=role_name,
+                description=descriptions[role_name],
             )
-            role = self.role_repository.create(name=role_name, description=description)
             self.role_repository.flush()
         return role
 
@@ -198,7 +207,7 @@ class UserService(BaseService[UserRepository]):
 
         if len(password) < self.MINIMUM_PASSWORD_LENGTH:
             raise ValidationError(
-                "Het wachtwoord moet minimaal 4 tekens bevatten.",
+                "Het wachtwoord moet minimaal 8 tekens bevatten.",
                 code="PASSWORD_TOO_SHORT",
                 details={"minimum_length": self.MINIMUM_PASSWORD_LENGTH},
             )

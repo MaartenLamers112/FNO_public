@@ -165,6 +165,7 @@ class CommentService(BaseService[CommentRepository]):
         person_id: int,
         content: str,
         user_id: int | None = None,
+        author_type: AuthorType = AuthorType.VISITOR,
     ) -> str:
         """Sla één doorlopende opmerkingstekst voor een persoon op."""
 
@@ -196,7 +197,7 @@ class CommentService(BaseService[CommentRepository]):
                 photo_id=person.photo_id,
                 person_id=person_id,
                 user_id=user_id,
-                author_type=AuthorType.VISITOR,
+                author_type=author_type,
                 content=normalized_content,
             )
             self.repository.flush()
@@ -408,6 +409,7 @@ class CommentService(BaseService[CommentRepository]):
         if (
             author_type
             in {
+                AuthorType.USER,
                 AuthorType.EMPLOYEE,
                 AuthorType.ADMINISTRATOR,
             }

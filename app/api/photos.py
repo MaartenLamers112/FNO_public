@@ -11,6 +11,7 @@ from app.api.responses import api_list_response, api_response
 from app.api.validation import parse_json_request, parse_query_request
 from app.auth.decorators import (
     admin_required,
+    contributor_required,
     employee_required,
     publication_management_required,
 )
@@ -36,6 +37,7 @@ from app.schemas import (
     PhotoResponse,
 )
 from app.services import (
+    AuthorizationService,
     CommentService,
     ExportService,
     PersonDetectionService,
@@ -57,10 +59,9 @@ def get_photos():
     query = parse_query_request(PhotoListQuery)
     service = PhotoService()
 
-    can_view_comparison = current_user.is_authenticated and current_user.role.name in {
-        "employee",
-        "administrator",
-    }
+    authorization = AuthorizationService()
+    can_view_comparison = authorization.can_manage_labels()
+    can_view_hidden = authorization.can_view_hidden_photos()
     return api_response(
         (
             PhotoCollectionResponse
@@ -73,7 +74,7 @@ def get_photos():
             location=query.location,
             sort=query.sort,
             direction=query.direction,
-            visible_only=not current_user.is_authenticated,
+            visible_only=not can_view_hidden,
             include_comparison=can_view_comparison,
         ),
     )
@@ -86,13 +87,12 @@ def get_photo(
     """Geef één foto met live afbeeldingsbron terug."""
 
     service = PhotoService()
-    can_view_comparison = current_user.is_authenticated and current_user.role.name in {
-        "employee",
-        "administrator",
-    }
+    authorization = AuthorizationService()
+    can_view_comparison = authorization.can_manage_labels()
+    can_view_hidden = authorization.can_view_hidden_photos()
     detail = service.get_accessible_detail(
         photo_id,
-        include_hidden=current_user.is_authenticated,
+        include_hidden=can_view_hidden,
         include_comparison=can_view_comparison,
     )
     schema = PhotoDetailResponse if can_view_comparison else PhotoPublicDetailResponse
@@ -100,6 +100,7 @@ def get_photo(
 
 
 @photos_blueprint.patch("/<int:photo_id>/metadata")
+@contributor_required
 def update_photo_metadata(photo_id: int):
     """Wijzig lokale FNO-metadata van een foto."""
 

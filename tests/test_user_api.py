@@ -9,7 +9,7 @@ def test_admin_can_create_user(client, authenticated_admin) -> None:
 
     response = client.post(
         "/api/users",
-        json={"username": "nieuw", "password": "veilig", "role": "employee"},
+        json={"username": "nieuw", "password": "veilig123", "role": "employee"},
         headers={"X-CSRFToken": "test-csrf-token"},
     )
 
@@ -37,13 +37,13 @@ def test_logged_in_user_can_change_own_password(
 
     response = client.post(
         "/api/users/me/password",
-        json={"current_password": "test", "new_password": "nieuw"},
+        json={"current_password": "test", "new_password": "nieuw123"},
         headers={"X-CSRFToken": "test-csrf-token"},
     )
 
     assert response.status_code == 200
     user = db.session.get(User, 1)
-    assert user.check_password("nieuw") is True
+    assert user.check_password("nieuw123") is True
 
 
 def test_user_response_never_contains_password_hash(

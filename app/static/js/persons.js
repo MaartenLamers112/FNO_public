@@ -7,6 +7,7 @@ export function renderPersons(
     callbacks = {},
     commentCounts = new Map(),
     {
+        canContribute = false,
         canManageLabels = false,
         canManageLocks = false,
         canViewComparison = false,
@@ -36,6 +37,7 @@ export function renderPersons(
             person,
             callbacks,
             commentCounts.get(person.id) ?? 0,
+            canContribute,
             canManageLabels,
             canManageLocks,
             canViewComparison,
@@ -73,6 +75,7 @@ function createPersonListItem(
     person,
     callbacks,
     commentCount,
+    canContribute,
     canManageLabels,
     canManageLocks,
     canViewComparison,
@@ -117,7 +120,7 @@ function createPersonListItem(
     name.type = "text";
     name.value = person.current_name ?? "";
     name.placeholder = "Naam nog onbekend";
-    name.disabled = person.name_locked && !canManageLocks;
+    name.disabled = !canContribute || (person.name_locked && !canManageLocks);
     name.title = person.name_locked ? "Naam is vergrendeld" : "";
     name.setAttribute("aria-label", `Naam bij label ${person.label_number}`);
     const commentIndicator = document.createElement("span");

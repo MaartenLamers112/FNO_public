@@ -7,7 +7,7 @@ from flask_login import current_user
 
 from app.api.responses import api_list_response, api_response
 from app.api.validation import parse_json_request
-from app.auth.decorators import admin_required, employee_required
+from app.auth.decorators import admin_required, contributor_required, employee_required
 from app.enums.author_type import AuthorType
 from app.schemas import (
     CommentCreate,
@@ -54,6 +54,7 @@ def update_person_number(person_id: int):
 
 
 @persons_blueprint.patch("/<int:person_id>/name")
+@contributor_required
 def update_person_name(person_id: int):
     """Wijzig de actuele naam van een persoon."""
 
@@ -92,6 +93,7 @@ def get_person_comments(person_id: int):
 
 
 @persons_blueprint.post("/<int:person_id>/comments")
+@contributor_required
 def create_person_comment(person_id: int):
     """Voeg een opmerking aan een persoon toe."""
 
@@ -99,12 +101,14 @@ def create_person_comment(person_id: int):
     comment = CommentService().create_person_comment(
         person_id=person_id,
         content=payload.content,
-        author_type=AuthorType.VISITOR,
+        author_type=AuthorType(current_user.role.name),
+        user_id=current_user.id,
     )
     return api_response(CommentResponse, comment, status_code=201)
 
 
 @persons_blueprint.patch("/<int:person_id>/comments-text")
+@contributor_required
 def update_person_comment_text(person_id: int):
     """Sla de doorlopende opmerkingstekst van een persoon op."""
 
@@ -112,6 +116,8 @@ def update_person_comment_text(person_id: int):
     content = CommentService().set_person_comment_text(
         person_id=person_id,
         content=payload.content,
+        user_id=current_user.id,
+        author_type=AuthorType(current_user.role.name),
     )
     response = PersonCommentTextResponse(
         person_id=person_id,
@@ -131,14 +137,19 @@ def delete_person_label(person_id: int):
 
 
 @persons_blueprint.delete("/comments/<int:comment_id>")
+@contributor_required
 def delete_person_comment(comment_id: int):
     """Verwijder een opmerking administratief."""
 
-    CommentService().delete_comment(comment_id=comment_id)
+    CommentService().delete_comment(
+        comment_id=comment_id,
+        user_id=current_user.id,
+    )
     return "", 204
 
 
 @persons_blueprint.patch("/comments/<int:comment_id>")
+@contributor_required
 def update_person_comment(comment_id: int):
     """Wijzig de inhoud van een opmerking."""
 
@@ -146,5 +157,6 @@ def update_person_comment(comment_id: int):
     comment = CommentService().update_comment(
         comment_id=comment_id,
         content=payload.content,
+        user_id=current_user.id,
     )
     return api_response(CommentResponse, comment)

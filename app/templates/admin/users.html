@@ -8,7 +8,7 @@
 
     <section class="admin-dashboard-main">
         <div class="admin-section-heading">
-            <div><h2 id="users-title">Gebruikers</h2><p>Beheer medewerkers en beheerders.</p></div>
+            <div><h2 id="users-title">Gebruikers</h2><p>Beheer gebruikers, medewerkers en beheerders.</p></div>
         </div>
 
         <form class="admin-form user-create-form" method="post">
@@ -17,9 +17,9 @@
             <h3>Gebruiker toevoegen</h3>
             <label>Gebruikersnaam <input name="username" required></label>
             <label>Rol
-                <select name="role"><option value="employee">Medewerker</option><option value="administrator">Beheerder</option></select>
+                <select name="role"><option value="user">Gebruiker</option><option value="employee">Medewerker</option><option value="administrator">Beheerder</option></select>
             </label>
-            <label>Wachtwoord <input name="password" type="password" minlength="4" required></label>
+            <label>Wachtwoord <input name="password" type="password" minlength="8" required></label>
             <button class="primary-button" type="submit">Toevoegen</button>
         </form>
 
@@ -33,6 +33,7 @@
                         <label>Gebruikersnaam <input name="username" value="{{ user.username }}" required></label>
                         <label>Rol
                             <select name="role">
+                                <option value="user"{% if user.role.name == 'user' %} selected{% endif %}>Gebruiker</option>
                                 <option value="employee"{% if user.role.name == 'employee' %} selected{% endif %}>Medewerker</option>
                                 <option value="administrator"{% if user.role.name == 'administrator' %} selected{% endif %}>Beheerder</option>
                             </select>
@@ -44,7 +45,7 @@
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="reset_password">
                         <input type="hidden" name="user_id" value="{{ user.id }}">
-                        <label>Nieuw wachtwoord <input name="password" type="password" minlength="4" required></label>
+                        <label>Nieuw wachtwoord <input name="password" type="password" minlength="8" required></label>
                         <button class="secondary-button" type="submit">Wachtwoord resetten</button>
                     </form>
                 </article>

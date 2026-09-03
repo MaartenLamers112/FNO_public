@@ -21,6 +21,7 @@ export class PhotoPageController {
         if (!(page instanceof HTMLElement)) throw new Error("Ongeldige fotopagina.");
         this.page = page;
         this.photoId = page.dataset.photoId;
+        this.canContribute = page.dataset.canContribute === "true";
         this.canManageLabels = page.dataset.canManageLabels === "true";
         this.canManagePublication = page.dataset.canManagePublication === "true";
         this.canViewComparison = page.dataset.canViewComparison === "true";
@@ -123,6 +124,7 @@ export class PhotoPageController {
             },
             this.commentCounts,
             {
+                canContribute: this.canContribute,
                 canManageLabels: this.canManageLabels,
                 canManageLocks: this.canManagePublication,
                 canViewComparison: this.canViewComparison,
@@ -783,7 +785,8 @@ export class PhotoPageController {
                 || this.selectedPersonId === null;
         }
         if (commentInput instanceof HTMLTextAreaElement) {
-            commentInput.disabled = this.selectedPersonId === null;
+            commentInput.disabled = !this.canContribute
+                || this.selectedPersonId === null;
         }
     }
 

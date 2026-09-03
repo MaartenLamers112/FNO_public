@@ -5,7 +5,9 @@ from app.models import Photo
 from app.repositories import PhotoRepository, RoleRepository, UserRepository
 
 
-def create_photo() -> Photo:
+def create_photo(
+    publication_status: PublicationStatus = PublicationStatus.CONCEPT,
+) -> Photo:
     """Maak een testfoto aan."""
 
     repository = PhotoRepository()
@@ -13,7 +15,7 @@ def create_photo() -> Photo:
         Photo(
             mm_id="MM-AUTH-001",
             photo_number="AUTH-001",
-            publication_status=PublicationStatus.CONCEPT,
+            publication_status=publication_status,
         )
     )
     repository.save()
@@ -48,6 +50,7 @@ def test_visitor_cannot_create_label(client, app) -> None:
         f"/api/photos/{photo.id}/persons",
         json={"x_position": 0.2, "y_position": 0.3},
     )
+
     assert response.status_code == 401
     assert response.get_json()["code"] == "AUTHENTICATION_REQUIRED"
 
@@ -61,6 +64,7 @@ def test_employee_can_create_label(client, app) -> None:
         f"/api/photos/{photo.id}/persons",
         json={"x_position": 0.2, "y_position": 0.3},
     )
+
     assert response.status_code == 201
 
 
@@ -73,4 +77,69 @@ def test_administrator_can_create_label(client, app) -> None:
         f"/api/photos/{photo.id}/persons",
         json={"x_position": 0.2, "y_position": 0.3},
     )
+
     assert response.status_code == 201
+
+
+def test_visitor_cannot_update_photo_metadata(client, app) -> None:
+    """Een bezoeker zonder login kan geen metadata wijzigen."""
+
+    photo = create_photo(PublicationStatus.PUBLISHED)
+
+    response = client.patch(
+        f"/api/photos/{photo.id}/metadata",
+        json={
+            "subject": "Nieuw onderwerp",
+            "date": "",
+            "location": "",
+            "description": "",
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.get_json()["code"] == "AUTHENTICATION_REQUIRED"
+
+
+def test_user_can_update_photo_metadata(client, app) -> None:
+    """Een gewone gebruiker kan metadata wijzigen."""
+
+    photo = create_photo(PublicationStatus.PUBLISHED)
+    login_as(client, "user")
+
+    response = client.patch(
+        f"/api/photos/{photo.id}/metadata",
+        json={
+            "subject": "Nieuw onderwerp",
+            "date": "",
+            "location": "",
+            "description": "",
+        },
+    )
+
+    assert response.status_code == 200
+
+
+def test_user_cannot_create_label(client, app) -> None:
+    """Een gewone gebruiker kan geen labels plaatsen."""
+
+    photo = create_photo(PublicationStatus.PUBLISHED)
+    login_as(client, "user")
+
+    response = client.post(
+        f"/api/photos/{photo.id}/persons",
+        json={"x_position": 0.2, "y_position": 0.3},
+    )
+
+    assert response.status_code == 403
+    assert response.get_json()["code"] == "FORBIDDEN"
+
+
+def test_user_cannot_view_concept_photo(client, app) -> None:
+    """Een gewone gebruiker kan geen conceptfoto bekijken."""
+
+    photo = create_photo()
+    login_as(client, "user")
+
+    response = client.get(f"/api/photos/{photo.id}")
+
+    assert response.status_code == 404

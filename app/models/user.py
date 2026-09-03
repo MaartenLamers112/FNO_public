@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 class User(UserMixin, CreatedAtMixin, BaseModel):
-    """Medewerker of beheerder die zich bij FNO kan aanmelden."""
+    """Ingelogde FNO-gebruiker met een rol."""
 
     __tablename__ = "user"
 

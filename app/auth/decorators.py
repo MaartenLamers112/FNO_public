@@ -9,6 +9,17 @@ from typing import Any, cast
 from app.services.authorization_service import AuthorizationService
 
 
+def contributor_required[F: Callable[..., Any]](view: F) -> F:
+    """Vereis een gebruiker, medewerker of beheerder voor de endpoint."""
+
+    @wraps(view)
+    def wrapped(*args: Any, **kwargs: Any) -> Any:
+        AuthorizationService().require_contribution()
+        return view(*args, **kwargs)
+
+    return cast(F, wrapped)
+
+
 def employee_required[F: Callable[..., Any]](view: F) -> F:
     """Vereis een medewerker of beheerder voor de endpoint."""
 

@@ -149,7 +149,7 @@ def test_user_service_rejects_short_admin_password(app) -> None:
         )
     except ValidationError as error:
         assert error.code == "PASSWORD_TOO_SHORT"
-        assert error.details == {"minimum_length": 4}
+        assert error.details == {"minimum_length": 8}
     else:
         raise AssertionError("ValidationError verwacht.")
 
@@ -159,13 +159,13 @@ def test_user_service_creates_employee(app) -> None:
 
     user = UserService().create_user(
         username=" nieuwe medewerker ",
-        password="veilig",
+        password="veilig123",
         role_name="employee",
     )
 
     assert user.username == "nieuwe medewerker"
     assert user.role.name == "employee"
-    assert user.check_password("veilig") is True
+    assert user.check_password("veilig123") is True
 
 
 def test_user_service_updates_managed_user(app) -> None:
@@ -191,7 +191,9 @@ def test_user_service_updates_managed_user(app) -> None:
 def test_user_service_prevents_restricting_own_admin_account(app) -> None:
     """Een beheerder kan het eigen beheeraccount niet uitschakelen."""
 
-    user = UserService().create_administrator(username="beheerder", password="veilig")
+    user = UserService().create_administrator(
+        username="beheerder", password="veilig123"
+    )
 
     try:
         UserService().update_user(
