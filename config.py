@@ -57,6 +57,9 @@ class BaseConfig:
     EMAIL_VERIFICATION_MAX_AGE_SECONDS = int(
         os.getenv("EMAIL_VERIFICATION_MAX_AGE_SECONDS", "86400")
     )
+    PASSWORD_RESET_MAX_AGE_SECONDS = int(
+        os.getenv("PASSWORD_RESET_MAX_AGE_SECONDS", "3600")
+    )
 
     MAIL_SERVER = os.getenv("MAIL_SERVER")
     MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))

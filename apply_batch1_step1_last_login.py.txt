@@ -1,0 +1,124 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+
+
+def replace_once(path: str, old: str, new: str) -> None:
+    file_path = ROOT / path
+    text = file_path.read_text(encoding="utf-8")
+    if old not in text:
+        raise RuntimeError(f"Verwachte tekst niet gevonden in {path}")
+    file_path.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+
+replace_once(
+    "app/templates/admin/users.html",
+    """                        <th><button type="button" class="user-sort-button" data-sort="verified">E-mail bevestigd</button></th>
+                        <th>Nieuw wachtwoord</th>""",
+    """                        <th><button type="button" class="user-sort-button" data-sort="verified">E-mail bevestigd</button></th>
+                        <th><button type="button" class="user-sort-button" data-sort="lastLogin">Laatste login</button></th>
+                        <th>Nieuw wachtwoord</th>""",
+)
+
+replace_once(
+    "app/templates/admin/users.html",
+    """                            data-verified="{{ '1' if user.email_verified else '0' }}"
+                        >""",
+    """                            data-verified="{{ '1' if user.email_verified else '0' }}"
+                            data-last-login="{% if user.last_login %}{{ user.last_login.strftime('%Y-%m-%dT%H:%M:%SZ') }}{% endif %}"
+                        >""",
+)
+
+replace_once(
+    "app/templates/admin/users.html",
+    """                            <td>
+                                <form method="post" class="user-password-form">""",
+    """                            <td
+                                class="user-last-login-cell"
+                                data-last-login-value="{% if user.last_login %}{{ user.last_login.strftime('%Y-%m-%dT%H:%M:%SZ') }}{% endif %}"
+                            >
+                                {% if user.last_login %}{{ user.last_login.strftime('%d-%m-%Y %H:%M') }} UTC{% else %}Nooit{% endif %}
+                            </td>
+                            <td>
+                                <form method="post" class="user-password-form">""",
+)
+
+js_path = ROOT / "app/static/js/admin-users.js"
+js_text = js_path.read_text(encoding="utf-8")
+if "function formatLastLogin()" not in js_text:
+    old = "updateCount();\n"
+    new = """function formatLastLogin() {
+    const formatter = new Intl.DateTimeFormat("nl-NL", {
+        dateStyle: "short",
+        timeStyle: "short",
+    });
+
+    for (const cell of document.querySelectorAll("[data-last-login-value]")) {
+        const value = cell.dataset.lastLoginValue;
+        if (!value) {
+            cell.textContent = "Nooit";
+            continue;
+        }
+
+        const timestamp = new Date(value);
+        if (!Number.isNaN(timestamp.getTime())) {
+            cell.textContent = formatter.format(timestamp);
+        }
+    }
+}
+
+formatLastLogin();
+updateCount();
+"""
+    if old not in js_text:
+        raise RuntimeError("Verwachte tekst niet gevonden in app/static/js/admin-users.js")
+    js_path.write_text(js_text.replace(old, new, 1), encoding="utf-8")
+
+test_path = ROOT / "tests/test_admin_users.py"
+test_text = test_path.read_text(encoding="utf-8")
+if "from datetime import datetime" not in test_text:
+    test_text = test_text.replace(
+        '"""Tests voor compact gebruikersbeheer."""\n\n',
+        '"""Tests voor compact gebruikersbeheer."""\n\nfrom datetime import datetime\n\n',
+        1,
+    )
+
+old = """    UserService().create_user(
+        username="voorbeeld",
+        email="voorbeeld@example.nl",
+        password="veilig123",
+        role_name="user",
+    )
+
+    response = client.get("/admin/users")
+
+    assert response.status_code == 200
+    assert b'id="user-search"' in response.data
+    assert b'id="user-table"' in response.data
+    assert b"voorbeeld@example.nl" in response.data
+    assert b"admin-users.js" in response.data
+"""
+new = """    user = UserService().create_user(
+        username="voorbeeld",
+        email="voorbeeld@example.nl",
+        password="veilig123",
+        role_name="user",
+    )
+    user.last_login = datetime(2026, 9, 4, 18, 30)
+    db.session.commit()
+
+    response = client.get("/admin/users")
+
+    assert response.status_code == 200
+    assert b'id="user-search"' in response.data
+    assert b'id="user-table"' in response.data
+    assert b"voorbeeld@example.nl" in response.data
+    assert b"Laatste login" in response.data
+    assert b'data-last-login="2026-09-04T18:30:00Z"' in response.data
+    assert b"admin-users.js" in response.data
+"""
+if old not in test_text:
+    raise RuntimeError("Verwachte testsectie niet gevonden in tests/test_admin_users.py")
+test_path.write_text(test_text.replace(old, new, 1), encoding="utf-8")
+
+print("Batch 1 - stap 1 is toegepast.")

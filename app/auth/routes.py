@@ -4,11 +4,19 @@ from __future__ import annotations
 
 from urllib.parse import urljoin, urlparse
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app.exceptions import AuthorizationError, ConflictError, ValidationError
-from app.services import RegistrationService, UserService
+from app.services import PasswordResetService, RegistrationService, UserService
 
 auth_blueprint = Blueprint(
     "auth",
@@ -114,6 +122,62 @@ def resend_verification():
             return redirect(url_for("auth.login"))
 
     return render_template("resend_verification.html")
+
+
+@auth_blueprint.route("/password/forgot", methods=["GET", "POST"])
+def forgot_password():
+    """Vraag zonder accountinformatie te lekken een wachtwoordlink aan."""
+
+    if current_user.is_authenticated:
+        return redirect(url_for("web.index"))
+
+    if request.method == "POST":
+        try:
+            PasswordResetService().request_reset(request.form.get("email", ""))
+        except RuntimeError:
+            current_app.logger.exception(
+                "Wachtwoordherstelmail kon niet worden verstuurd."
+            )
+
+        flash(
+            "Als het e-mailadres bij een actief account hoort, is een "
+            "wachtwoordlink verstuurd.",
+            "success",
+        )
+        return redirect(url_for("auth.login"))
+
+    return render_template("forgot_password.html")
+
+
+@auth_blueprint.route("/password/reset/<token>", methods=["GET", "POST"])
+def reset_password(token: str):
+    """Stel via een geldige e-maillink een nieuw wachtwoord in."""
+
+    if current_user.is_authenticated:
+        return redirect(url_for("web.index"))
+
+    service = PasswordResetService()
+
+    if request.method == "GET":
+        try:
+            service.validate_token(token)
+        except ValidationError as error:
+            flash(str(error), "error")
+            return redirect(url_for("auth.forgot_password"))
+        return render_template("reset_password.html")
+
+    try:
+        service.reset_password(
+            token,
+            password=request.form.get("password", ""),
+            password_confirmation=request.form.get("password_confirmation", ""),
+        )
+    except ValidationError as error:
+        flash(str(error), "error")
+        return render_template("reset_password.html")
+
+    flash("Je wachtwoord is gewijzigd. Je kunt nu aanmelden.", "success")
+    return redirect(url_for("auth.login"))
 
 
 @auth_blueprint.route("/account/password", methods=["GET", "POST"])
