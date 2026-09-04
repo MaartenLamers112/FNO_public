@@ -20,7 +20,28 @@ function filterRows() {
         row.hidden = query !== "" && !haystack.includes(query);
     }
 
-    updateCount();
+    function formatLastLogin() {
+    const formatter = new Intl.DateTimeFormat("nl-NL", {
+        dateStyle: "short",
+        timeStyle: "short",
+    });
+
+    for (const cell of document.querySelectorAll("[data-last-login-value]")) {
+        const value = cell.dataset.lastLoginValue;
+        if (!value) {
+            cell.textContent = "Nooit";
+            continue;
+        }
+
+        const timestamp = new Date(value);
+        if (!Number.isNaN(timestamp.getTime())) {
+            cell.textContent = formatter.format(timestamp);
+        }
+    }
+}
+
+formatLastLogin();
+updateCount();
 }
 
 function sortRows(key, direction) {

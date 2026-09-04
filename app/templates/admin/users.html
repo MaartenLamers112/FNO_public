@@ -54,6 +54,7 @@
                         <th><button type="button" class="user-sort-button" data-sort="role">Rol</button></th>
                         <th><button type="button" class="user-sort-button" data-sort="active">Actief</button></th>
                         <th><button type="button" class="user-sort-button" data-sort="verified">E-mail bevestigd</button></th>
+                        <th><button type="button" class="user-sort-button" data-sort="lastLogin">Laatste login</button></th>
                         <th>Nieuw wachtwoord</th>
                         <th>Acties</th>
                     </tr>
@@ -67,6 +68,7 @@
                             data-role="{{ user.role.name }}"
                             data-active="{{ '1' if user.is_active else '0' }}"
                             data-verified="{{ '1' if user.email_verified else '0' }}"
+                            data-last-login="{% if user.last_login %}{{ user.last_login.strftime('%Y-%m-%dT%H:%M:%SZ') }}{% endif %}"
                         >
                             <td>
                                 <input
@@ -100,6 +102,12 @@
                                 {% else %}
                                     Nee
                                 {% endif %}
+                            </td>
+                            <td
+                                class="user-last-login-cell"
+                                data-last-login-value="{% if user.last_login %}{{ user.last_login.strftime('%Y-%m-%dT%H:%M:%SZ') }}{% endif %}"
+                            >
+                                {% if user.last_login %}{{ user.last_login.strftime('%d-%m-%Y %H:%M') }} UTC{% else %}Nooit{% endif %}
                             </td>
                             <td>
                                 <form method="post" class="user-password-form">

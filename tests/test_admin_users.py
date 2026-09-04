@@ -1,5 +1,7 @@
 """Tests voor compact gebruikersbeheer."""
 
+from datetime import datetime
+
 from app.extensions import db
 from app.models import Role, User
 from app.services import UserService
@@ -40,12 +42,14 @@ def test_admin_users_page_shows_compact_table_and_email(app, client) -> None:
     """Gebruikersbeheer toont e-mail en tabelhulpmiddelen."""
 
     login_user(client, username="beheerder", role_name="administrator")
-    UserService().create_user(
+    user = UserService().create_user(
         username="voorbeeld",
         email="voorbeeld@example.nl",
         password="veilig123",
         role_name="user",
     )
+    user.last_login = datetime(2026, 9, 4, 18, 30)
+    db.session.commit()
 
     response = client.get("/admin/users")
 
@@ -53,6 +57,8 @@ def test_admin_users_page_shows_compact_table_and_email(app, client) -> None:
     assert b'id="user-search"' in response.data
     assert b'id="user-table"' in response.data
     assert b"voorbeeld@example.nl" in response.data
+    assert b"Laatste login" in response.data
+    assert b'data-last-login="2026-09-04T18:30:00Z"' in response.data
     assert b"admin-users.js" in response.data
 
 
