@@ -255,6 +255,7 @@ def admin_users():
             if action == "create":
                 service.create_user(
                     username=request.form.get("username", ""),
+                    email=request.form.get("email") or None,
                     password=request.form.get("password", ""),
                     role_name=request.form.get("role", ""),
                 )
@@ -274,6 +275,12 @@ def admin_users():
                     password=request.form.get("password", ""),
                 )
                 flash("Wachtwoord opnieuw ingesteld.", "success")
+            elif action == "delete":
+                service.delete_user(
+                    int(request.form.get("user_id", "0")),
+                    acting_user_id=current_user.id,
+                )
+                flash("Gebruiker verwijderd.", "success")
         except (FNOError, ValueError) as error:
             flash(str(error), "error")
         return redirect(url_for("web.admin_users"))

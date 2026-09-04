@@ -180,6 +180,36 @@ class UserService(BaseService[UserRepository]):
         self.repository.save()
         return user
 
+    def delete_user(self, user_id: int, *, acting_user_id: int) -> None:
+        """Verwijder een ongebruikt account zonder auditgegevens te verliezen."""
+
+        user = self._get_user(user_id)
+        if user.id == acting_user_id:
+            raise ValidationError(
+                "Je kunt je eigen beheerdersaccount niet verwijderen.",
+                code="CANNOT_DELETE_OWN_ACCOUNT",
+            )
+
+        if (
+            user.role.name == self.ADMINISTRATOR_ROLE_NAME
+            and user.is_active
+            and self._active_administrator_count() <= 1
+        ):
+            raise ValidationError(
+                "De laatste actieve beheerder kan niet worden verwijderd.",
+                code="CANNOT_DELETE_LAST_ADMINISTRATOR",
+            )
+
+        if self.repository.has_references(user):
+            raise ValidationError(
+                "Deze gebruiker heeft historie of andere gekoppelde gegevens. "
+                "Deactiveer het account in plaats van het te verwijderen.",
+                code="USER_HAS_REFERENCES",
+            )
+
+        self.repository.delete(user)
+        self.repository.save()
+
     def reset_password(self, user_id: int, *, password: str) -> User:
         """Stel als beheerder een nieuw wachtwoord in."""
 
@@ -208,6 +238,14 @@ class UserService(BaseService[UserRepository]):
         user.set_password(new_password)
         self.repository.save()
         return user
+
+    def _active_administrator_count(self) -> int:
+        """Tel actieve beheerders."""
+
+        return sum(
+            user.is_active and user.role.name == self.ADMINISTRATOR_ROLE_NAME
+            for user in self.list_users()
+        )
 
     def _get_user(self, user_id: int) -> User:
         user = self.repository.get(user_id)

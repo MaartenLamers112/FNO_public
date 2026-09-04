@@ -107,3 +107,16 @@ class UserRepository(BaseRepository[User]):
         )
 
         return user
+
+    def has_references(self, user: User) -> bool:
+        """Controleer of een gebruiker nog door applicatiedata wordt gebruikt."""
+
+        return any((
+            user.history,
+            user.name_changes,
+            user.metadata_changes,
+            user.comments,
+            user.closed_comments,
+            user.deleted_comments,
+            user.updated_settings,
+        ))

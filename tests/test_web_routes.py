@@ -566,7 +566,7 @@ def test_admin_users_page_is_available(client, authenticated_admin) -> None:
 
     assert response.status_code == 200
     assert b"Gebruikers" in response.data
-    assert b"Gebruiker toevoegen" in response.data
+    assert b'id="user-table"' in response.data
 
 
 def test_employee_cannot_open_admin_users(client, authenticated_employee) -> None:

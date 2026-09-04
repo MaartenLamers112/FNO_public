@@ -8,49 +8,148 @@
 
     <section class="admin-dashboard-main">
         <div class="admin-section-heading">
-            <div><h2 id="users-title">Gebruikers</h2><p>Beheer gebruikers, medewerkers en beheerders.</p></div>
+            <div>
+                <h2 id="users-title">Gebruikers</h2>
+                <p>Beheer gebruikers, medewerkers en beheerders.</p>
+            </div>
         </div>
 
-        <form class="admin-form user-create-form" method="post">
+        <form class="admin-form user-create-form user-create-form--compact" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="create">
-            <h3>Gebruiker toevoegen</h3>
             <label>Gebruikersnaam <input name="username" required></label>
-            <label>Rol
-                <select name="role"><option value="user">Gebruiker</option><option value="employee">Medewerker</option><option value="administrator">Beheerder</option></select>
+            <label>E-mailadres <input name="email" type="email"></label>
+            <label>
+                Rol
+                <select name="role">
+                    <option value="user">Gebruiker</option>
+                    <option value="employee">Medewerker</option>
+                    <option value="administrator">Beheerder</option>
+                </select>
             </label>
-            <label>Wachtwoord <input name="password" type="password" minlength="8" required></label>
+            <label>
+                Wachtwoord
+                <input name="password" type="password" minlength="8" required>
+            </label>
             <button class="primary-button" type="submit">Toevoegen</button>
         </form>
 
-        <div class="user-management-list">
-            {% for user in users %}
-                <article class="user-management-card">
-                    <form method="post" class="user-edit-form">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="action" value="update">
-                        <input type="hidden" name="user_id" value="{{ user.id }}">
-                        <label>Gebruikersnaam <input name="username" value="{{ user.username }}" required></label>
-                        <label>Rol
-                            <select name="role">
-                                <option value="user"{% if user.role.name == 'user' %} selected{% endif %}>Gebruiker</option>
-                                <option value="employee"{% if user.role.name == 'employee' %} selected{% endif %}>Medewerker</option>
-                                <option value="administrator"{% if user.role.name == 'administrator' %} selected{% endif %}>Beheerder</option>
-                            </select>
-                        </label>
-                        <label class="user-active-control"><input name="is_active" type="checkbox"{% if user.is_active %} checked{% endif %}> Actief</label>
-                        <button class="secondary-button" type="submit">Opslaan</button>
-                    </form>
-                    <form method="post" class="user-reset-form">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="action" value="reset_password">
-                        <input type="hidden" name="user_id" value="{{ user.id }}">
-                        <label>Nieuw wachtwoord <input name="password" type="password" minlength="8" required></label>
-                        <button class="secondary-button" type="submit">Wachtwoord resetten</button>
-                    </form>
-                </article>
-            {% endfor %}
+        <div class="user-table-toolbar">
+            <label for="user-search">Zoeken</label>
+            <input
+                id="user-search"
+                type="search"
+                placeholder="Gebruikersnaam of e-mailadres"
+                autocomplete="off"
+            >
+            <span id="user-count" class="user-table-count"></span>
+        </div>
+
+        <div class="user-table-wrapper">
+            <table class="user-table" id="user-table">
+                <thead>
+                    <tr>
+                        <th><button type="button" class="user-sort-button" data-sort="username">Gebruikersnaam</button></th>
+                        <th><button type="button" class="user-sort-button" data-sort="email">E-mailadres</button></th>
+                        <th><button type="button" class="user-sort-button" data-sort="role">Rol</button></th>
+                        <th><button type="button" class="user-sort-button" data-sort="active">Actief</button></th>
+                        <th><button type="button" class="user-sort-button" data-sort="verified">E-mail bevestigd</button></th>
+                        <th>Nieuw wachtwoord</th>
+                        <th>Acties</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr
+                            data-user-row
+                            data-username="{{ user.username|lower }}"
+                            data-email="{{ (user.email or '')|lower }}"
+                            data-role="{{ user.role.name }}"
+                            data-active="{{ '1' if user.is_active else '0' }}"
+                            data-verified="{{ '1' if user.email_verified else '0' }}"
+                        >
+                            <td>
+                                <input
+                                    form="update-user-{{ user.id }}"
+                                    name="username"
+                                    value="{{ user.username }}"
+                                    required
+                                >
+                            </td>
+                            <td class="user-email-cell">{{ user.email or '—' }}</td>
+                            <td>
+                                <select form="update-user-{{ user.id }}" name="role">
+                                    <option value="user"{% if user.role.name == 'user' %} selected{% endif %}>Gebruiker</option>
+                                    <option value="employee"{% if user.role.name == 'employee' %} selected{% endif %}>Medewerker</option>
+                                    <option value="administrator"{% if user.role.name == 'administrator' %} selected{% endif %}>Beheerder</option>
+                                </select>
+                            </td>
+                            <td class="user-checkbox-cell">
+                                <input
+                                    form="update-user-{{ user.id }}"
+                                    name="is_active"
+                                    type="checkbox"
+                                    {% if user.is_active %}checked{% endif %}
+                                >
+                            </td>
+                            <td class="user-status-cell">
+                                {% if user.email is none %}
+                                    —
+                                {% elif user.email_verified %}
+                                    Ja
+                                {% else %}
+                                    Nee
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="post" class="user-password-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="action" value="reset_password">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <input name="password" type="password" minlength="8" required>
+                                    <button class="secondary-button compact-button" type="submit">Reset</button>
+                                </form>
+                            </td>
+                            <td>
+                                <div class="user-row-actions">
+                                    <form id="update-user-{{ user.id }}" method="post">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="update">
+                                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    </form>
+                                    <button
+                                        class="secondary-button compact-button"
+                                        type="submit"
+                                        form="update-user-{{ user.id }}"
+                                    >
+                                        Opslaan
+                                    </button>
+                                    <form
+                                        method="post"
+                                        onsubmit="return confirm('Gebruiker {{ user.username }} verwijderen?');"
+                                    >
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                                        <button
+                                            class="danger-button compact-button"
+                                            type="submit"
+                                            {% if user.id == current_user.id %}disabled{% endif %}
+                                        >
+                                            Verwijderen
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </section>
 </section>
+{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    <script type="module" src="{{ url_for('static', filename='js/admin-users.js') }}"></script>
 {% endblock %}

@@ -24,7 +24,7 @@
                 href="{% if photo_active and photo_id is defined %}{{ url_for('web.photo_page', photo_id=photo_id) }}{% else %}{{ url_for('web.index') }}{% endif %}"
                 data-photo-tab
             >Foto</a>
-            {% if current_user.is_authenticated %}
+            {% if current_user.is_authenticated and current_user.role.name in ['employee', 'administrator'] %}
                 <a class="primary-navigation-link{% if admin_active %} is-active{% endif %}" href="{{ url_for('web.admin_dashboard') }}">Beheer</a>
             {% endif %}
         </nav>

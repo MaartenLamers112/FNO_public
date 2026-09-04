@@ -3328,3 +3328,119 @@ body {
     display: block;
     margin-bottom: 0.6rem;
 }
+
+/* Compact gebruikersbeheer. */
+.user-create-form--compact {
+    display: flex;
+    gap: 0.7rem;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.user-create-form--compact label {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.user-table-toolbar {
+    display: flex;
+    gap: 0.6rem;
+    margin: 0.8rem 0 0.45rem;
+    align-items: center;
+}
+
+.user-table-toolbar input {
+    width: min(28rem, 100%);
+}
+
+.user-table-count {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+}
+
+.user-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+}
+
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-surface);
+    white-space: nowrap;
+}
+
+.user-table th,
+.user-table td {
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: middle;
+}
+
+.user-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.user-table input:not([type="checkbox"]),
+.user-table select {
+    min-width: 8rem;
+    height: 2rem;
+}
+
+.user-table td:first-child input {
+    width: 12rem;
+}
+
+.user-email-cell {
+    max-width: 19rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-checkbox-cell,
+.user-status-cell {
+    text-align: center;
+}
+
+.user-password-form,
+.user-row-actions {
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.user-password-form input {
+    width: 9rem;
+}
+
+.user-row-actions form {
+    margin: 0;
+}
+
+.user-sort-button {
+    padding: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.user-sort-button::after {
+    margin-left: 0.25rem;
+    content: "↕";
+    opacity: 0.45;
+}
+
+.user-sort-button[data-direction="asc"]::after {
+    content: "↑";
+    opacity: 1;
+}
+
+.user-sort-button[data-direction="desc"]::after {
+    content: "↓";
+    opacity: 1;
+}
