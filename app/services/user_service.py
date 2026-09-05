@@ -219,6 +219,51 @@ class UserService(BaseService[UserRepository]):
         self.repository.save()
         return user
 
+    def change_own_email(
+        self,
+        user_id: int,
+        *,
+        email: str,
+        current_password: str,
+    ) -> User:
+        """Wijzig het eigen e-mailadres en trek de verificatie in."""
+
+        user = self._get_user(user_id)
+        if not user.check_password(current_password):
+            raise AuthorizationError(
+                "Het huidige wachtwoord is onjuist.",
+                code="INVALID_CURRENT_PASSWORD",
+            )
+
+        normalized_email = self._normalize_email(email)
+        if normalized_email is None:
+            raise ValidationError(
+                "E-mailadres is verplicht.",
+                code="EMAIL_REQUIRED",
+            )
+        self._validate_email(normalized_email)
+
+        existing = self.repository.get_by_email(normalized_email)
+        if existing is not None and existing.id != user.id:
+            raise ConflictError(
+                "Dit e-mailadres is al in gebruik.",
+                code="EMAIL_ALREADY_EXISTS",
+                details={"email": normalized_email},
+            )
+        if user.email == normalized_email:
+            raise ValidationError(
+                "Dit is al het e-mailadres van je account.",
+                code="EMAIL_UNCHANGED",
+            )
+
+        self.repository.update_email(
+            user,
+            email=normalized_email,
+            verified=False,
+        )
+        self.repository.save()
+        return user
+
     def change_own_password(
         self,
         user_id: int,

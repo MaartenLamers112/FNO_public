@@ -24,13 +24,13 @@ from app.services.mm_import_service import (
     MetadataSupplementResult,
     MmImportService,
 )
+from app.services.password_reset_service import PasswordResetService
 from app.services.person_detection_service import (
     AutoLabelResult,
     PersonDetectionService,
 )
 from app.services.person_service import PersonService
 from app.services.photo_service import PhotoService
-from app.services.password_reset_service import PasswordResetService
 from app.services.registration_service import RegistrationService
 from app.services.role_service import RoleService
 from app.services.user_service import UserService

@@ -16,7 +16,12 @@ from flask import (
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app.exceptions import AuthorizationError, ConflictError, ValidationError
-from app.services import PasswordResetService, RegistrationService, UserService
+from app.services import (
+    EmailVerificationService,
+    PasswordResetService,
+    RegistrationService,
+    UserService,
+)
 
 auth_blueprint = Blueprint(
     "auth",
@@ -178,6 +183,45 @@ def reset_password(token: str):
 
     flash("Je wachtwoord is gewijzigd. Je kunt nu aanmelden.", "success")
     return redirect(url_for("auth.login"))
+
+
+@auth_blueprint.route("/account/email", methods=["GET", "POST"])
+@login_required
+def change_email():
+    """Laat een ingelogde gebruiker het eigen e-mailadres wijzigen."""
+
+    if request.method == "POST":
+        try:
+            user = UserService().change_own_email(
+                current_user.id,
+                email=request.form.get("email", ""),
+                current_password=request.form.get("current_password", ""),
+            )
+        except (AuthorizationError, ConflictError, ValidationError) as error:
+            flash(str(error), "error")
+        else:
+            try:
+                EmailVerificationService().send_verification(user)
+            except RuntimeError:
+                current_app.logger.exception(
+                    "Verificatiemail na e-mailwijziging kon niet worden verstuurd."
+                )
+                flash(
+                    "Het nieuwe e-mailadres is opgeslagen, maar de verificatiemail "
+                    "kon niet worden verstuurd. Probeer de verificatiemail opnieuw "
+                    "te sturen.",
+                    "error",
+                )
+                return redirect(url_for("auth.resend_verification"))
+
+            flash(
+                "Je nieuwe e-mailadres is opgeslagen. Controleer je e-mail om "
+                "het adres opnieuw te bevestigen.",
+                "success",
+            )
+            return redirect(url_for("web.index"))
+
+    return render_template("change_email.html", help_context="overview")
 
 
 @auth_blueprint.route("/account/password", methods=["GET", "POST"])

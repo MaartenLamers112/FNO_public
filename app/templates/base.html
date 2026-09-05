@@ -60,6 +60,7 @@
                     {% if current_user.is_authenticated %}
                         <p class="account-menu-identity">Ingelogd als <strong>{{ current_user.username }}</strong></p>
                         <a class="account-menu-link" href="{{ url_for('auth.change_password') }}">Wachtwoord wijzigen</a>
+                        <a class="account-menu-link" href="{{ url_for('auth.change_email') }}">E-mailadres wijzigen</a>
                         <form method="post" action="{{ url_for('auth.logout') }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button class="secondary-button account-menu-submit" type="submit">Uitloggen</button>
@@ -75,6 +76,7 @@
                             <button class="primary-button account-menu-submit" type="submit">Inloggen</button>
                         </form>
                         <a class="account-menu-link" href="{{ url_for('auth.register') }}">Registreren</a>
+                        <a class="account-menu-link" href="{{ url_for('auth.forgot_password') }}">Wachtwoord vergeten?</a>
                         <a class="account-menu-link" href="{{ url_for('auth.resend_verification') }}">Verificatiemail opnieuw sturen</a>
                     {% endif %}
                 </div>

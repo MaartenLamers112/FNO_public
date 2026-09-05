@@ -1,0 +1,299 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+
+
+def edit(path: str, old: str, new: str) -> None:
+    file_path = ROOT / path
+    text = file_path.read_text(encoding="utf-8")
+    if old not in text:
+        raise RuntimeError(f"Verwachte tekst niet gevonden in {path}")
+    file_path.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+
+edit(
+    "app/auth/routes.py",
+    "from app.services import PasswordResetService, RegistrationService, UserService",
+    """from app.services import (
+    EmailVerificationService,
+    PasswordResetService,
+    RegistrationService,
+    UserService,
+)""",
+)
+
+route_marker = '''@auth_blueprint.route("/account/password", methods=["GET", "POST"])
+@login_required
+def change_password():'''
+route_block = '''@auth_blueprint.route("/account/email", methods=["GET", "POST"])
+@login_required
+def change_email():
+    """Laat een ingelogde gebruiker het eigen e-mailadres wijzigen."""
+
+    if request.method == "POST":
+        try:
+            user = UserService().change_own_email(
+                current_user.id,
+                email=request.form.get("email", ""),
+                current_password=request.form.get("current_password", ""),
+            )
+        except (AuthorizationError, ConflictError, ValidationError) as error:
+            flash(str(error), "error")
+        else:
+            try:
+                EmailVerificationService().send_verification(user)
+            except RuntimeError:
+                current_app.logger.exception(
+                    "Verificatiemail na e-mailwijziging kon niet worden verstuurd."
+                )
+                flash(
+                    "Het nieuwe e-mailadres is opgeslagen, maar de verificatiemail "
+                    "kon niet worden verstuurd. Probeer de verificatiemail opnieuw "
+                    "te sturen.",
+                    "error",
+                )
+                return redirect(url_for("auth.resend_verification"))
+
+            flash(
+                "Je nieuwe e-mailadres is opgeslagen. Controleer je e-mail om "
+                "het adres opnieuw te bevestigen.",
+                "success",
+            )
+            return redirect(url_for("web.index"))
+
+    return render_template("change_email.html", help_context="overview")
+
+
+''' + route_marker
+edit("app/auth/routes.py", route_marker, route_block)
+
+service_marker = '    def change_own_password(\n'
+service_block = '''    def change_own_email(
+        self,
+        user_id: int,
+        *,
+        email: str,
+        current_password: str,
+    ) -> User:
+        """Wijzig het eigen e-mailadres en trek de verificatie in."""
+
+        user = self._get_user(user_id)
+        if not user.check_password(current_password):
+            raise AuthorizationError(
+                "Het huidige wachtwoord is onjuist.",
+                code="INVALID_CURRENT_PASSWORD",
+            )
+
+        normalized_email = self._normalize_email(email)
+        if normalized_email is None:
+            raise ValidationError(
+                "E-mailadres is verplicht.",
+                code="EMAIL_REQUIRED",
+            )
+        self._validate_email(normalized_email)
+
+        existing = self.repository.get_by_email(normalized_email)
+        if existing is not None and existing.id != user.id:
+            raise ConflictError(
+                "Dit e-mailadres is al in gebruik.",
+                code="EMAIL_ALREADY_EXISTS",
+                details={"email": normalized_email},
+            )
+        if user.email == normalized_email:
+            raise ValidationError(
+                "Dit is al het e-mailadres van je account.",
+                code="EMAIL_UNCHANGED",
+            )
+
+        self.repository.update_email(
+            user,
+            email=normalized_email,
+            verified=False,
+        )
+        self.repository.save()
+        return user
+
+''' + service_marker
+edit("app/services/user_service.py", service_marker, service_block)
+
+repo_marker = '    def set_email_verified(self, user: User, *, verified: bool) -> User:\n'
+repo_block = '''    def update_email(
+        self,
+        user: User,
+        *,
+        email: str,
+        verified: bool,
+    ) -> User:
+        """Werk e-mailadres en verificatiestatus samen bij."""
+
+        user.email = email
+        user.email_verified = verified
+        return user
+
+''' + repo_marker
+edit("app/repositories/user_repository.py", repo_marker, repo_block)
+
+edit(
+    "app/templates/base.html",
+    '''                        <a class="account-menu-link" href="{{ url_for('auth.change_password') }}">Wachtwoord wijzigen</a>
+                        <form method="post" action="{{ url_for('auth.logout') }}">''',
+    '''                        <a class="account-menu-link" href="{{ url_for('auth.change_password') }}">Wachtwoord wijzigen</a>
+                        <a class="account-menu-link" href="{{ url_for('auth.change_email') }}">E-mailadres wijzigen</a>
+                        <form method="post" action="{{ url_for('auth.logout') }}">''',
+)
+
+edit(
+    "app/templates/base.html",
+    '''                        <a class="account-menu-link" href="{{ url_for('auth.register') }}">Registreren</a>
+                        <a class="account-menu-link" href="{{ url_for('auth.resend_verification') }}">Verificatiemail opnieuw sturen</a>''',
+    '''                        <a class="account-menu-link" href="{{ url_for('auth.register') }}">Registreren</a>
+                        <a class="account-menu-link" href="{{ url_for('auth.forgot_password') }}">Wachtwoord vergeten?</a>
+                        <a class="account-menu-link" href="{{ url_for('auth.resend_verification') }}">Verificatiemail opnieuw sturen</a>''',
+)
+
+(ROOT / "app/templates/change_email.html").write_text(
+    '''{% extends "base.html" %}
+
+{% block title %}E-mailadres wijzigen | Foto Nummeraar Online{% endblock %}
+
+{% block content %}
+<section class="login-panel" aria-labelledby="change-email-title">
+    <h1 id="change-email-title">E-mailadres wijzigen</h1>
+    <p class="login-introduction">
+        Huidig e-mailadres:
+        <strong>{{ current_user.email or 'Niet ingesteld' }}</strong>
+    </p>
+    <p>
+        Na de wijziging moet het nieuwe e-mailadres opnieuw worden bevestigd.
+        Tot die bevestiging kun je niet bijdragen aan FNO.
+    </p>
+
+    <form method="post" class="login-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label for="email">Nieuw e-mailadres</label>
+        <input id="email" name="email" type="email" autocomplete="email" required autofocus>
+
+        <label for="current-password">Huidig wachtwoord</label>
+        <input
+            id="current-password"
+            name="current_password"
+            type="password"
+            autocomplete="current-password"
+            required
+        >
+
+        <button class="primary-button" type="submit">E-mailadres wijzigen</button>
+    </form>
+</section>
+{% endblock %}
+''',
+    encoding="utf-8",
+)
+
+(ROOT / "tests/test_email_change.py").write_text(
+    '''"""Tests voor het wijzigen van het eigen e-mailadres."""
+
+from app.extensions import db
+from app.services import UserService
+
+
+def login_registered_user(client):
+    """Maak een geregistreerde gebruiker en meld deze aan."""
+
+    user = UserService().create_user(
+        username="emailtest",
+        email="oud@example.nl",
+        password="veiligwachtwoord",
+        role_name="user",
+    )
+    user.email_verified = True
+    db.session.commit()
+
+    response = client.post(
+        "/login",
+        data={"username": "emailtest", "password": "veiligwachtwoord"},
+    )
+    assert response.status_code == 302
+    return user
+
+
+def test_change_email_page_requires_login(client) -> None:
+    """Anonieme bezoekers worden naar aanmelden gestuurd."""
+
+    response = client.get("/account/email")
+
+    assert response.status_code == 302
+    assert "/login?next=" in response.headers["Location"]
+
+
+def test_user_can_change_own_email(app, client) -> None:
+    """Een gebruiker kan het eigen adres wijzigen met huidig wachtwoord."""
+
+    user = login_registered_user(client)
+
+    response = client.post(
+        "/account/email",
+        data={"email": "Nieuw@Example.nl", "current_password": "veiligwachtwoord"},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"nieuwe e-mailadres is opgeslagen" in response.data
+    assert user.email == "nieuw@example.nl"
+    assert user.email_verified is False
+
+
+def test_email_change_requires_current_password(app, client) -> None:
+    """Een verkeerd huidig wachtwoord blokkeert de wijziging."""
+
+    user = login_registered_user(client)
+
+    response = client.post(
+        "/account/email",
+        data={"email": "nieuw@example.nl", "current_password": "verkeerd"},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"huidige wachtwoord is onjuist" in response.data
+    assert user.email == "oud@example.nl"
+    assert user.email_verified is True
+
+
+def test_email_change_rejects_existing_email(app, client) -> None:
+    """Een e-mailadres kan maar aan een account gekoppeld zijn."""
+
+    UserService().create_user(
+        username="bestaand",
+        email="bestaand@example.nl",
+        password="veiligwachtwoord",
+        role_name="user",
+    )
+    user = login_registered_user(client)
+
+    response = client.post(
+        "/account/email",
+        data={"email": "bestaand@example.nl", "current_password": "veiligwachtwoord"},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"e-mailadres is al in gebruik" in response.data
+    assert user.email == "oud@example.nl"
+    assert user.email_verified is True
+
+
+def test_account_menu_contains_password_reset_for_visitors(client) -> None:
+    """Het sleuteltjemenu bevat de wachtwoord-vergetenlink."""
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert b'href="/password/forgot"' in response.data
+    assert b"Wachtwoord vergeten?" in response.data
+''',
+    encoding="utf-8",
+)
+
+print("Batch 1 - stap 3 is toegepast.")

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}E-mailadres wijzigen | Foto Nummeraar Online{% endblock %}
+
+{% block content %}
+<section class="login-panel" aria-labelledby="change-email-title">
+    <h1 id="change-email-title">E-mailadres wijzigen</h1>
+    <p class="login-introduction">
+        Huidig e-mailadres:
+        <strong>{{ current_user.email or 'Niet ingesteld' }}</strong>
+    </p>
+    <p>
+        Na de wijziging moet het nieuwe e-mailadres opnieuw worden bevestigd.
+        Tot die bevestiging kun je niet bijdragen aan FNO.
+    </p>
+
+    <form method="post" class="login-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <label for="email">Nieuw e-mailadres</label>
+        <input id="email" name="email" type="email" autocomplete="email" required autofocus>
+
+        <label for="current-password">Huidig wachtwoord</label>
+        <input
+            id="current-password"
+            name="current_password"
+            type="password"
+            autocomplete="current-password"
+            required
+        >
+
+        <button class="primary-button" type="submit">E-mailadres wijzigen</button>
+    </form>
+</section>
+{% endblock %}
