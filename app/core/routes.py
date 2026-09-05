@@ -27,6 +27,7 @@ from app.services import (
     MmComparisonReportService,
     MmImportService,
     PhotoService,
+    RoleUpgradeRequestService,
     UserService,
 )
 
@@ -288,6 +289,42 @@ def admin_users():
     return render_template(
         "admin/users.html",
         users=service.list_users(),
+        help_context="admin",
+    )
+
+
+@web_blueprint.route("/admin/role-requests", methods=["GET", "POST"])
+@admin_required
+def admin_role_requests():
+    """Beoordeel aanvragen om een hogere gebruikersrol."""
+
+    service = RoleUpgradeRequestService()
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        try:
+            service.review_request(
+                int(request.form.get("request_id", "0")),
+                reviewer_id=current_user.id,
+                approve=action == "approve",
+                rejection_reason=request.form.get("rejection_reason", ""),
+            )
+        except (FNOError, ValueError) as error:
+            flash(str(error), "error")
+        except RuntimeError:
+            flash(
+                "De beoordeling is opgeslagen, maar de e-mailmelding kon niet "
+                "worden verstuurd.",
+                "error",
+            )
+        else:
+            flash("Rolverhogingsaanvraag beoordeeld.", "success")
+        return redirect(url_for("web.admin_role_requests"))
+
+    return render_template(
+        "admin/role_requests.html",
+        requests=service.list_requests(),
+        pending_count=service.count_pending(),
+        service=service,
         help_context="admin",
     )
 

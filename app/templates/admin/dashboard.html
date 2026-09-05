@@ -14,6 +14,9 @@
         <span><strong>{{ summary.concept_photos }}</strong> concept</span>
         <span><strong>{{ summary.hidden_photos }}</strong> verborgen</span>
         <span><strong>{{ summary.open_comments }}</strong> open opmerkingen</span>
+        {% if current_user.role.name == 'administrator' %}
+            <span><strong>{{ summary.pending_role_requests }}</strong> <a href="{{ url_for('web.admin_role_requests') }}">rolaanvragen</a></span>
+        {% endif %}
     </div>
 
     <section class="admin-dashboard-main" aria-labelledby="dashboard-title">

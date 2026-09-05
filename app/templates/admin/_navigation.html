@@ -5,6 +5,7 @@
     {% endif %}
     {% if current_user.role.name == 'administrator' %}
         <a class="admin-tab{% if admin_tab == 'users' %} admin-tab--active{% endif %}" href="{{ url_for('web.admin_users') }}">Gebruikers</a>
+        <a class="admin-tab{% if admin_tab == 'role_requests' %} admin-tab--active{% endif %}" href="{{ url_for('web.admin_role_requests') }}">Rolaanvragen</a>
     {% endif %}
     <a class="admin-tab{% if admin_tab == 'history' %} admin-tab--active{% endif %}" href="{{ url_for('web.admin_history') }}">Historie</a>
     <span class="admin-tab admin-tab--disabled" title="Wordt later toegevoegd">Instellingen</span>

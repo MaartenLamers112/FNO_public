@@ -10,6 +10,7 @@ from app.models.name_history import NameHistory
 from app.models.person import Person
 from app.models.photo import Photo
 from app.models.role import Role
+from app.models.role_upgrade_request import RoleUpgradeRequest
 from app.models.setting import Setting
 from app.models.user import User
 
@@ -19,6 +20,7 @@ __all__ = [
     "TimestampMixin",
     "utc_now",
     "Role",
+    "RoleUpgradeRequest",
     "User",
     "Setting",
     "Photo",

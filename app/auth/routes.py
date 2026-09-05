@@ -20,6 +20,7 @@ from app.services import (
     EmailVerificationService,
     PasswordResetService,
     RegistrationService,
+    RoleUpgradeRequestService,
     UserService,
 )
 
@@ -222,6 +223,39 @@ def change_email():
             return redirect(url_for("web.index"))
 
     return render_template("change_email.html", help_context="overview")
+
+
+@auth_blueprint.route("/account/role-request", methods=["GET", "POST"])
+@login_required
+def request_role_upgrade():
+    """Laat een ingelogde gebruiker een hogere rol aanvragen."""
+
+    service = RoleUpgradeRequestService()
+    if request.method == "POST":
+        try:
+            service.request_upgrade(current_user.id)
+        except (AuthorizationError, ValidationError) as error:
+            flash(str(error), "error")
+        except RuntimeError:
+            current_app.logger.exception(
+                "Rolverhogingsaanvraag opgeslagen, maar beheerdersmail mislukte."
+            )
+            flash(
+                "Je aanvraag is opgeslagen, maar de e-mailmelding aan beheerders "
+                "kon niet worden verstuurd.",
+                "error",
+            )
+        else:
+            flash("Je aanvraag is verstuurd naar de beheerders.", "success")
+        return redirect(url_for("auth.request_role_upgrade"))
+
+    return render_template(
+        "role_upgrade_request.html",
+        service=service,
+        pending_request=service.get_pending_for_user(current_user.id),
+        next_role=service.get_available_upgrade(current_user.id),
+        help_context="overview",
+    )
 
 
 @auth_blueprint.route("/account/password", methods=["GET", "POST"])

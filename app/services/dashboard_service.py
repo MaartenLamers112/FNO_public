@@ -7,7 +7,12 @@ from dataclasses import dataclass
 from app.enums.history_event_type import HistoryEventType
 from app.enums.publication_status import PublicationStatus
 from app.models import History
-from app.repositories import CommentRepository, HistoryRepository, PhotoRepository
+from app.repositories import (
+    CommentRepository,
+    HistoryRepository,
+    PhotoRepository,
+    RoleUpgradeRequestRepository,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +23,7 @@ class DashboardSummary:
     published_photos: int
     hidden_photos: int
     open_comments: int
+    pending_role_requests: int
     recent_activity: list[History]
 
 
@@ -29,12 +35,16 @@ class DashboardService:
         photo_repository: PhotoRepository | None = None,
         comment_repository: CommentRepository | None = None,
         history_repository: HistoryRepository | None = None,
+        role_upgrade_request_repository: RoleUpgradeRequestRepository | None = None,
     ) -> None:
         """Initialiseer de dashboardservice."""
 
         self.photo_repository = photo_repository or PhotoRepository()
         self.comment_repository = comment_repository or CommentRepository()
         self.history_repository = history_repository or HistoryRepository()
+        self.role_upgrade_request_repository = (
+            role_upgrade_request_repository or RoleUpgradeRequestRepository()
+        )
 
     def get_summary(self, *, activity_limit: int = 10) -> DashboardSummary:
         """Geef de actuele beheersamenvatting terug."""
@@ -67,5 +77,6 @@ class DashboardService:
                 PublicationStatus.HIDDEN
             ),
             open_comments=self.comment_repository.count_open(),
+            pending_role_requests=self.role_upgrade_request_repository.count_pending(),
             recent_activity=recent_activity,
         )

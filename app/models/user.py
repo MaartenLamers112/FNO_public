@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from app.models.metadata_history import MetadataHistory
     from app.models.name_history import NameHistory
     from app.models.role import Role
+    from app.models.role_upgrade_request import RoleUpgradeRequest
     from app.models.setting import Setting
 
 
@@ -114,6 +115,20 @@ class User(UserMixin, CreatedAtMixin, BaseModel):
     updated_settings: Mapped[list[Setting]] = relationship(
         "Setting",
         back_populates="updated_by_user",
+    )
+
+    role_upgrade_requests: Mapped[list[RoleUpgradeRequest]] = relationship(
+        "RoleUpgradeRequest",
+        foreign_keys="RoleUpgradeRequest.user_id",
+        back_populates="user",
+        passive_deletes=True,
+    )
+
+    reviewed_role_upgrade_requests: Mapped[list[RoleUpgradeRequest]] = relationship(
+        "RoleUpgradeRequest",
+        foreign_keys="RoleUpgradeRequest.reviewed_by_user_id",
+        back_populates="reviewed_by",
+        passive_deletes=True,
     )
 
     def set_password(self, password: str) -> None:

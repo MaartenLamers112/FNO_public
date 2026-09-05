@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Roluitbreiding aanvragen | Foto Nummeraar Online{% endblock %}
+
+{% block content %}
+<section class="login-panel" aria-labelledby="role-request-title">
+    <h1 id="role-request-title">Roluitbreiding aanvragen</h1>
+    <p>Huidige rol: <strong>{{ service.role_label(current_user.role.name) }}</strong></p>
+
+    {% if pending_request %}
+        <p>
+            Je aanvraag voor
+            <strong>{{ service.role_label(pending_request.requested_role) }}</strong>
+            staat open sinds {{ pending_request.requested_at.strftime('%d-%m-%Y %H:%M') }}.
+        </p>
+    {% elif next_role %}
+        <p>
+            Je kunt de rol <strong>{{ service.role_label(next_role) }}</strong>
+            aanvragen. Een beheerder beoordeelt de aanvraag.
+        </p>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="primary-button" type="submit">
+                {{ service.role_label(next_role) }} aanvragen
+            </button>
+        </form>
+    {% else %}
+        <p>Voor je huidige rol is geen verdere roluitbreiding beschikbaar.</p>
+    {% endif %}
+</section>
+{% endblock %}

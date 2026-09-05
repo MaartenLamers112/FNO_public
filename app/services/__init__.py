@@ -33,6 +33,7 @@ from app.services.person_service import PersonService
 from app.services.photo_service import PhotoService
 from app.services.registration_service import RegistrationService
 from app.services.role_service import RoleService
+from app.services.role_upgrade_request_service import RoleUpgradeRequestService
 from app.services.user_service import UserService
 
 __all__ = [
@@ -40,6 +41,7 @@ __all__ = [
     "BaseService",
     "PhotoService",
     "RoleService",
+    "RoleUpgradeRequestService",
     "PersonDetectionService",
     "AutoLabelResult",
     "PersonService",

@@ -132,4 +132,6 @@ class UserRepository(BaseRepository[User]):
             user.closed_comments,
             user.deleted_comments,
             user.updated_settings,
+            user.role_upgrade_requests,
+            user.reviewed_role_upgrade_requests,
         ))

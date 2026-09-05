@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Rolaanvragen | Foto Nummeraar Online{% endblock %}
+{% block body_class %}admin-page-body{% endblock %}
+
+{% block content %}
+<section class="admin-workspace" aria-labelledby="role-requests-title">
+    {% set admin_tab = 'role_requests' %}
+    {% include 'admin/_navigation.html' %}
+
+    <section class="admin-dashboard-main">
+        <div class="admin-section-heading">
+            <div>
+                <h2 id="role-requests-title">Rolaanvragen</h2>
+                <p>{{ pending_count }} openstaande aanvraag{% if pending_count != 1 %}en{% endif %}.</p>
+            </div>
+        </div>
+
+        {% if requests %}
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Gebruiker</th>
+                            <th>Aangevraagde rol</th>
+                            <th>Aangevraagd</th>
+                            <th>Status</th>
+                            <th>Beoordeling</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in requests %}
+                            <tr>
+                                <td>{{ item.user.username }}</td>
+                                <td>{{ service.role_label(item.requested_role) }}</td>
+                                <td>{{ item.requested_at.strftime('%d-%m-%Y %H:%M') }}</td>
+                                <td>
+                                    {% if item.status == 'pending' %}Open
+                                    {% elif item.status == 'approved' %}Goedgekeurd
+                                    {% else %}Afgewezen{% endif %}
+                                </td>
+                                <td>
+                                    {% if item.status == 'pending' %}
+                                        <form method="post" class="admin-inline-form">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="request_id" value="{{ item.id }}">
+                                            <input
+                                                name="rejection_reason"
+                                                type="text"
+                                                aria-label="Reden bij afwijzing"
+                                                placeholder="Reden bij afwijzing (optioneel)"
+                                            >
+                                            <button class="primary-button" type="submit" name="action" value="approve">Goedkeuren</button>
+                                            <button class="secondary-button" type="submit" name="action" value="reject">Afwijzen</button>
+                                        </form>
+                                    {% else %}
+                                        {{ item.reviewed_by.username if item.reviewed_by else '—' }}
+                                        {% if item.rejection_reason %} · {{ item.rejection_reason }}{% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty-message">Er zijn nog geen rolverhogingsaanvragen.</p>
+        {% endif %}
+    </section>
+</section>
+{% endblock %}
