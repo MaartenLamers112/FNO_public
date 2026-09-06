@@ -84,12 +84,15 @@ def _validate_production_configuration(app: Flask) -> None:
     secret_key = str(app.config["SECRET_KEY"])
     if secret_key == "replace_with_random_secret_key" or len(secret_key) < 32:
         raise RuntimeError(
-            "SECRET_KEY is niet geschikt voor productie. Gebruik een willekeurige sleutel "
-            "van minimaal 32 tekens."
+            "SECRET_KEY is niet geschikt voor productie. "
+            "Gebruik een willekeurige sleutel van minimaal 32 tekens."
         )
 
     public_base_url = str(app.config.get("PUBLIC_BASE_URL") or "").strip().rstrip("/")
-    if not public_base_url.startswith("https://") or "localhost" in public_base_url.lower():
+    if (
+        not public_base_url.startswith("https://")
+        or "localhost" in public_base_url.lower()
+    ):
         raise RuntimeError(
             "PUBLIC_BASE_URL moet in productie een publieke HTTPS-URL zijn."
         )
@@ -103,9 +106,7 @@ def _validate_production_configuration(app: Flask) -> None:
         return
 
     missing_mail_settings = [
-        name
-        for name in ("MAIL_SERVER", "MAIL_FROM")
-        if not app.config.get(name)
+        name for name in ("MAIL_SERVER", "MAIL_FROM") if not app.config.get(name)
     ]
     if missing_mail_settings:
         missing = ", ".join(missing_mail_settings)
