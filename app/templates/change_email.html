@@ -1,24 +1,51 @@
 {% extends "base.html" %}
 
-{% block title %}E-mailadres wijzigen | Foto Nummeraar Online{% endblock %}
+{% set has_email = current_user.email is not none %}
+
+{% block title %}
+    {% if has_email %}E-mailadres wijzigen{% else %}E-mailadres toevoegen{% endif %}
+    | Foto Nummeraar Online
+{% endblock %}
 
 {% block content %}
 <section class="login-panel" aria-labelledby="change-email-title">
-    <h1 id="change-email-title">E-mailadres wijzigen</h1>
-    <p class="login-introduction">
-        Huidig e-mailadres:
-        <strong>{{ current_user.email or 'Niet ingesteld' }}</strong>
-    </p>
-    <p>
-        Na de wijziging moet het nieuwe e-mailadres opnieuw worden bevestigd.
-        Tot die bevestiging kun je niet bijdragen aan FNO.
-    </p>
+    <h1 id="change-email-title">
+        {% if has_email %}E-mailadres wijzigen{% else %}E-mailadres toevoegen{% endif %}
+    </h1>
+
+    {% if has_email %}
+        <p class="login-introduction">
+            Huidig e-mailadres:
+            <strong>{{ current_user.email }}</strong>
+        </p>
+        <p>
+            Na de wijziging moet het nieuwe e-mailadres opnieuw worden bevestigd.
+            Tot die bevestiging kun je niet bijdragen aan FNO.
+        </p>
+    {% else %}
+        <p class="login-introduction">
+            Aan dit account is nog geen e-mailadres gekoppeld.
+        </p>
+        <p>
+            Het nieuwe e-mailadres moet eerst worden bevestigd via de link
+            die FNO per e-mail verstuurt.
+        </p>
+    {% endif %}
 
     <form method="post" class="login-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <label for="email">Nieuw e-mailadres</label>
-        <input id="email" name="email" type="email" autocomplete="email" required autofocus>
+        <label for="email">
+            {% if has_email %}Nieuw e-mailadres{% else %}E-mailadres{% endif %}
+        </label>
+        <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            required
+            autofocus
+        >
 
         <label for="current-password">Huidig wachtwoord</label>
         <input
@@ -29,7 +56,9 @@
             required
         >
 
-        <button class="primary-button" type="submit">E-mailadres wijzigen</button>
+        <button class="primary-button" type="submit">
+            {% if has_email %}E-mailadres wijzigen{% else %}E-mailadres toevoegen{% endif %}
+        </button>
     </form>
 </section>
 {% endblock %}

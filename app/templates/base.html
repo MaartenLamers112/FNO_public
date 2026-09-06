@@ -60,7 +60,9 @@
                     {% if current_user.is_authenticated %}
                         <p class="account-menu-identity">Ingelogd als <strong>{{ current_user.username }}</strong></p>
                         <a class="account-menu-link" href="{{ url_for('auth.change_password') }}">Wachtwoord wijzigen</a>
-                        <a class="account-menu-link" href="{{ url_for('auth.change_email') }}">E-mailadres wijzigen</a>
+                        <a class="account-menu-link" href="{{ url_for('auth.change_email') }}">
+                            {% if current_user.email %}E-mailadres wijzigen{% else %}E-mailadres toevoegen{% endif %}
+                        </a>
                         {% if current_user.role.name in ['user', 'employee'] %}
                             <a class="account-menu-link" href="{{ url_for('auth.request_role_upgrade') }}">Roluitbreiding aanvragen</a>
                         {% endif %}
