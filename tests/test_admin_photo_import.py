@@ -38,6 +38,20 @@ def sample_record() -> dict[str, object]:
     }
 
 
+def sample_record_with_number(
+    photo_number: str,
+    *,
+    mm_id: str,
+) -> dict[str, object]:
+    """Geef een MM-resultaat met een instelbaar fotonummer."""
+
+    record = sample_record()
+    fields = dict(record["fields"])
+    fields["delving_hubId"] = [mm_id]
+    fields["dc_identifier"] = [photo_number]
+    return {"fields": fields}
+
+
 def test_import_page_requires_administrator(app, client) -> None:
     """Een medewerker mag de MM-import niet openen."""
 
@@ -165,6 +179,48 @@ def test_import_preview_is_paginated(app, client, monkeypatch) -> None:
     assert b"Pagina 2 van 3" in response.data
     assert b"Vorige 100" in response.data
     assert b"Volgende 100" in response.data
+
+
+def test_import_preview_sorts_all_results_before_pagination(
+    app,
+    client,
+    monkeypatch,
+) -> None:
+    """Sortering gebeurt over de volledige MM-set vóór paginering."""
+
+    with app.app_context():
+        create_user(role_name="administrator", username="beheerder")
+
+    records = [
+        sample_record_with_number(
+            f"A{number:03d}",
+            mm_id=f"MM-{number:03d}",
+        )
+        for number in range(101, 0, -1)
+    ]
+
+    monkeypatch.setattr(
+        "app.services.memorix_service.MemorixService.search_records",
+        lambda self, filters, rows: records,
+    )
+
+    login(client, "beheerder")
+
+    response = client.post(
+        "/admin/photos/import",
+        data={
+            "action": "preview",
+            "collection_part": "Vortum-Mullem",
+            "sort_field": "photo-number",
+            "sort_direction": "asc",
+            "page_target": "2",
+        },
+    )
+
+    assert response.status_code == 200
+    assert b"Pagina 2 van 2" in response.data
+    assert b"A101" in response.data
+    assert b"A001" not in response.data
 
 
 def test_administrator_can_supplement_empty_mm_metadata(

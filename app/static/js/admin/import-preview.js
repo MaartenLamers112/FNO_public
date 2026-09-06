@@ -94,6 +94,14 @@ class ImportPreviewController {
         const headerCells = [
             ...this.preview.querySelectorAll(".import-column-labels th"),
         ];
+        const form = this.preview.querySelector("[data-import-form]");
+        if (!(form instanceof HTMLFormElement)) return;
+
+        const sortFieldInput = form.querySelector("[name='sort_field']");
+        const sortDirectionInput = form.querySelector(
+            "[name='sort_direction']",
+        );
+        const pageInput = form.querySelector("[name='page']");
 
         headerCells.forEach((cell, index) => {
             const field = sortableFields[index];
@@ -102,37 +110,42 @@ class ImportPreviewController {
             const button = document.createElement("button");
             button.type = "button";
             button.className = "import-sort-button";
-            button.textContent = "↕";
-            button.title = "Sorteer deze kolom";
-            let direction = 1;
+            button.title = "Sorteer alle gevonden foto's op deze kolom";
+
+            const isActive = sortFieldInput?.value === field;
+            const currentDirection = sortDirectionInput?.value === "desc"
+                ? "desc"
+                : "asc";
+
+            button.textContent = isActive
+                ? (currentDirection === "asc" ? "↑" : "↓")
+                : "↕";
 
             button.addEventListener("click", () => {
-                this.#sortRows(field, direction);
-                direction *= -1;
-                button.textContent = direction === -1 ? "↑" : "↓";
+                if (
+                    !(sortFieldInput instanceof HTMLInputElement)
+                    || !(sortDirectionInput instanceof HTMLInputElement)
+                ) {
+                    return;
+                }
+
+                const sameField = sortFieldInput.value === field;
+                const nextDirection = sameField
+                    && sortDirectionInput.value === "asc"
+                    ? "desc"
+                    : "asc";
+
+                sortFieldInput.value = field;
+                sortDirectionInput.value = nextDirection;
+
+                if (pageInput instanceof HTMLInputElement) {
+                    pageInput.value = "1";
+                }
+
+                form.requestSubmit();
             });
             cell.append(button);
         });
-    }
-
-    #sortRows(field, direction) {
-        this.rows.sort((left, right) => direction * this.#sortValue(
-            left,
-            field,
-        ).localeCompare(
-            this.#sortValue(right, field),
-            "nl-NL",
-            { numeric: true },
-        ));
-
-        const body = this.rows[0]?.parentElement;
-        if (body) {
-            this.rows.forEach((row) => body.append(row));
-        }
-    }
-
-    #sortValue(row, field) {
-        return normalize(row.dataset[datasetKey(field)]);
     }
 
     #populateFilterOptions() {

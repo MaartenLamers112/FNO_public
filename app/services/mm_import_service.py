@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Any
@@ -33,6 +34,18 @@ FILTER_FIELDS = {
     "photo_number": "dc_identifier",
     "date": "dcterms_created",
 }
+
+SORT_FIELDS = {
+    "photo-number": "photo_number",
+    "title": "title",
+    "date": "date",
+    "location": "location",
+    "subject": "subject",
+    "collection-part": "collection_part",
+    "status": "status",
+}
+
+SORT_DIRECTIONS = {"asc", "desc"}
 
 
 @dataclass(frozen=True)
@@ -92,33 +105,45 @@ class MmImportService(BaseService[MmImportJobRepository]):
         *,
         page: int = 1,
         page_size: int = 100,
+        sort_field: str | None = None,
+        sort_direction: str = "asc",
     ) -> ImportPreview:
-        """Geef één snelle pagina voorvertoningsrecords."""
+        """Geef één pagina voorvertoningsrecords."""
 
         mm_filters = self._normalize_filters(filters)
-        raw_records, found_count = self.memorix_service.search_records_page(
-            filters=mm_filters,
-            page=page,
-            page_size=page_size,
+        normalized_sort_field = sort_field if sort_field in SORT_FIELDS else None
+        normalized_sort_direction = (
+            sort_direction if sort_direction in SORT_DIRECTIONS else "asc"
         )
-        records = [
-            self.memorix_service.normalize_search_record(record)
-            for record in raw_records
-        ]
-        mm_ids = {record["mm_id"] for record in records if record["mm_id"]}
-        existing_by_mm_id = {
-            photo.mm_id: photo for photo in self.photo_repository.get_by_mm_ids(mm_ids)
-        }
-        for record in records:
-            existing_photo = existing_by_mm_id.get(record["mm_id"])
-            record["exists"] = existing_photo is not None
-            record["photo_id"] = (
-                existing_photo.id if existing_photo is not None else None
-            )
-            record["valid"] = bool(record["mm_id"] and record["photo_number"])
 
-        page_count = max((found_count + page_size - 1) // page_size, 1)
-        current_page = min(max(page, 1), page_count)
+        if normalized_sort_field is None:
+            raw_records, found_count = self.memorix_service.search_records_page(
+                filters=mm_filters,
+                page=page,
+                page_size=page_size,
+            )
+            records = self._prepare_preview_records(raw_records)
+            page_count = max((found_count + page_size - 1) // page_size, 1)
+            current_page = min(max(page, 1), page_count)
+        else:
+            raw_records = self.memorix_service.search_records(
+                filters=mm_filters,
+                rows=page_size,
+            )
+            records = self._prepare_preview_records(raw_records)
+            found_count = len(records)
+
+            self._sort_preview_records(
+                records,
+                field=normalized_sort_field,
+                direction=normalized_sort_direction,
+            )
+
+            page_count = max((found_count + page_size - 1) // page_size, 1)
+            current_page = min(max(page, 1), page_count)
+            start = (current_page - 1) * page_size
+            records = records[start : start + page_size]
+
         return ImportPreview(
             records=records,
             found_count=found_count,
@@ -139,10 +164,17 @@ class MmImportService(BaseService[MmImportJobRepository]):
         selected_mm_ids: set[str],
         user_id: int,
         page: int = 1,
+        sort_field: str | None = None,
+        sort_direction: str = "asc",
     ) -> MmImportJob:
         """Importeer de geselecteerde geldige nieuwe MM-records."""
 
-        preview = self.preview(filters, page=page)
+        preview = self.preview(
+            filters,
+            page=page,
+            sort_field=sort_field,
+            sort_direction=sort_direction,
+        )
         imported = 0
         failed = 0
 
@@ -285,6 +317,68 @@ class MmImportService(BaseService[MmImportJobRepository]):
             updated_photos=len(updated_photo_ids),
             updated_fields=updated_fields,
             missing_photos=len(photos_to_supplement) - len(matched_ids),
+        )
+
+    def _prepare_preview_records(
+        self,
+        raw_records: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Normaliseer MM-records en voeg lokale importstatus toe."""
+
+        records = [
+            self.memorix_service.normalize_search_record(record)
+            for record in raw_records
+        ]
+        mm_ids = {record["mm_id"] for record in records if record["mm_id"]}
+        existing_by_mm_id = {
+            photo.mm_id: photo for photo in self.photo_repository.get_by_mm_ids(mm_ids)
+        }
+
+        for record in records:
+            existing_photo = existing_by_mm_id.get(record["mm_id"])
+            record["exists"] = existing_photo is not None
+            record["photo_id"] = (
+                existing_photo.id if existing_photo is not None else None
+            )
+            record["valid"] = bool(record["mm_id"] and record["photo_number"])
+            record["status"] = self._preview_status(record)
+
+        return records
+
+    def _sort_preview_records(
+        self,
+        records: list[dict[str, Any]],
+        *,
+        field: str,
+        direction: str,
+    ) -> None:
+        """Sorteer de volledige voorvertoningsset vóór paginering."""
+
+        record_field = SORT_FIELDS[field]
+        records.sort(
+            key=lambda record: self._natural_sort_key(
+                str(record.get(record_field) or "")
+            ),
+            reverse=direction == "desc",
+        )
+
+    @staticmethod
+    def _preview_status(record: dict[str, Any]) -> str:
+        """Geef de importstatus van één voorvertoningsrecord."""
+
+        if not record["valid"]:
+            return "invalid"
+        if record["exists"]:
+            return "existing"
+        return "new"
+
+    @staticmethod
+    def _natural_sort_key(value: str) -> tuple[tuple[int, object], ...]:
+        """Maak een natuurlijke sorteersleutel voor tekst met getallen."""
+
+        parts = re.split(r"(\d+)", value.casefold())
+        return tuple(
+            (0, int(part)) if part.isdigit() else (1, part) for part in parts if part
         )
 
     @staticmethod

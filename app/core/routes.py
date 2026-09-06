@@ -123,6 +123,9 @@ def admin_import_photos():
     if requested_page is None:
         requested_page = request.form.get("page", 1, type=int)
     page = max(requested_page or 1, 1)
+    sort_field = request.form.get("sort_field") or None
+    sort_direction = request.form.get("sort_direction", "asc")
+
     service = MmImportService()
     action = request.form.get("action") if request.method == "POST" else None
 
@@ -212,6 +215,8 @@ def admin_import_photos():
                     selected_mm_ids=selected_mm_ids,
                     user_id=current_user.id,
                     page=page,
+                    sort_field=sort_field,
+                    sort_direction=sort_direction,
                 )
                 flash(
                     f"{import_job.imported_count} foto's zijn als concept toegevoegd; "
@@ -230,7 +235,12 @@ def admin_import_photos():
                     "success",
                 )
                 return redirect(url_for("web.admin_import_photos"))
-            preview = service.preview(filters, page=page)
+            preview = service.preview(
+                filters,
+                page=page,
+                sort_field=sort_field,
+                sort_direction=sort_direction,
+            )
         except FNOError as error:
             flash(str(error), "error")
 
@@ -240,6 +250,8 @@ def admin_import_photos():
         preview=preview,
         filter_options=filter_options,
         import_job=import_job,
+        sort_field=sort_field,
+        sort_direction=sort_direction,
         help_context="admin",
     )
 

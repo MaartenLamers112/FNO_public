@@ -95,6 +95,16 @@
                 <input type="hidden" name="{{ key }}" value="{{ value }}">
             {% endfor %}
             <input type="hidden" name="page" value="{{ preview.page }}">
+            <input
+                type="hidden"
+                name="sort_field"
+                value="{{ sort_field or '' }}"
+            >
+            <input
+                type="hidden"
+                name="sort_direction"
+                value="{{ sort_direction }}"
+            >
 
             {% if preview.page_count > 1 %}
                 <nav class="import-pagination" aria-label="Pagina's met MM-resultaten">

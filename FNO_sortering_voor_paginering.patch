@@ -1,0 +1,420 @@
+diff --git a/app/services/mm_import_service.py b/app/services/mm_import_service.py
+--- a/app/services/mm_import_service.py
++++ b/app/services/mm_import_service.py
+@@ -2,6 +2,7 @@
+
+ from __future__ import annotations
+
++import re
+ from dataclasses import dataclass
+ from time import perf_counter
+ from typing import Any
+@@ -34,6 +35,18 @@ FILTER_FIELDS = {
+     "date": "dcterms_created",
+ }
+
++SORT_FIELDS = {
++    "photo-number": "photo_number",
++    "title": "title",
++    "date": "date",
++    "location": "location",
++    "subject": "subject",
++    "collection-part": "collection_part",
++    "status": "status",
++}
++
++SORT_DIRECTIONS = {"asc", "desc"}
++
+
+ @dataclass(frozen=True)
+ class ImportPreview:
+@@ -85,31 +98,45 @@ class MmImportService(BaseService[MmImportJobRepository]):
+         *,
+         page: int = 1,
+         page_size: int = 100,
++        sort_field: str | None = None,
++        sort_direction: str = "asc",
+     ) -> ImportPreview:
+-        """Geef één snelle pagina voorvertoningsrecords."""
++        """Geef één pagina voorvertoningsrecords."""
+
+         mm_filters = self._normalize_filters(filters)
+-        raw_records, found_count = self.memorix_service.search_records_page(
+-            filters=mm_filters,
+-            page=page,
+-            page_size=page_size,
++        normalized_sort_field = sort_field if sort_field in SORT_FIELDS else None
++        normalized_sort_direction = (
++            sort_direction if sort_direction in SORT_DIRECTIONS else "asc"
+         )
+-        records = [
+-            self.memorix_service.normalize_search_record(record)
+-            for record in raw_records
+-        ]
+-        mm_ids = {record["mm_id"] for record in records if record["mm_id"]}
+-        existing_by_mm_id = {
+-            photo.mm_id: photo for photo in self.photo_repository.get_by_mm_ids(mm_ids)
+-        }
+-        for record in records:
+-            existing_photo = existing_by_mm_id.get(record["mm_id"])
+-            record["exists"] = existing_photo is not None
+-            record["photo_id"] = (
+-                existing_photo.id if existing_photo is not None else None
++
++        if normalized_sort_field is None:
++            raw_records, found_count = self.memorix_service.search_records_page(
++                filters=mm_filters,
++                page=page,
++                page_size=page_size,
+             )
+-            record["valid"] = bool(record["mm_id"] and record["photo_number"])
++            records = self._prepare_preview_records(raw_records)
++            page_count = max((found_count + page_size - 1) // page_size, 1)
++            current_page = min(max(page, 1), page_count)
++        else:
++            raw_records = self.memorix_service.search_records(
++                filters=mm_filters,
++                rows=page_size,
++            )
++            records = self._prepare_preview_records(raw_records)
++            found_count = len(records)
++
++            self._sort_preview_records(
++                records,
++                field=normalized_sort_field,
++                direction=normalized_sort_direction,
++            )
++
++            page_count = max((found_count + page_size - 1) // page_size, 1)
++            current_page = min(max(page, 1), page_count)
++            start = (current_page - 1) * page_size
++            records = records[start : start + page_size]
+
+-        page_count = max((found_count + page_size - 1) // page_size, 1)
+-        current_page = min(max(page, 1), page_count)
+         return ImportPreview(
+             records=records,
+             found_count=found_count,
+@@ -130,10 +157,17 @@ class MmImportService(BaseService[MmImportJobRepository]):
+         selected_mm_ids: set[str],
+         user_id: int,
+         page: int = 1,
++        sort_field: str | None = None,
++        sort_direction: str = "asc",
+     ) -> MmImportJob:
+         """Importeer de geselecteerde geldige nieuwe MM-records."""
+
+-        preview = self.preview(filters, page=page)
++        preview = self.preview(
++            filters,
++            page=page,
++            sort_field=sort_field,
++            sort_direction=sort_direction,
++        )
+         imported = 0
+         failed = 0
+
+@@ -274,6 +308,68 @@ class MmImportService(BaseService[MmImportJobRepository]):
+             missing_photos=len(photos_to_supplement) - len(matched_ids),
+         )
+
++    def _prepare_preview_records(
++        self,
++        raw_records: list[dict[str, Any]],
++    ) -> list[dict[str, Any]]:
++        """Normaliseer MM-records en voeg lokale importstatus toe."""
++
++        records = [
++            self.memorix_service.normalize_search_record(record)
++            for record in raw_records
++        ]
++        mm_ids = {
++            record["mm_id"]
++            for record in records
++            if record["mm_id"]
++        }
++        existing_by_mm_id = {
++            photo.mm_id: photo
++            for photo in self.photo_repository.get_by_mm_ids(mm_ids)
++        }
++
++        for record in records:
++            existing_photo = existing_by_mm_id.get(record["mm_id"])
++            record["exists"] = existing_photo is not None
++            record["photo_id"] = (
++                existing_photo.id if existing_photo is not None else None
++            )
++            record["valid"] = bool(
++                record["mm_id"] and record["photo_number"]
++            )
++            record["status"] = self._preview_status(record)
++
++        return records
++
++    def _sort_preview_records(
++        self,
++        records: list[dict[str, Any]],
++        *,
++        field: str,
++        direction: str,
++    ) -> None:
++        """Sorteer de volledige voorvertoningsset vóór paginering."""
++
++        record_field = SORT_FIELDS[field]
++        records.sort(
++            key=lambda record: self._natural_sort_key(
++                str(record.get(record_field) or "")
++            ),
++            reverse=direction == "desc",
++        )
++
++    @staticmethod
++    def _preview_status(record: dict[str, Any]) -> str:
++        """Geef de importstatus van één voorvertoningsrecord."""
++
++        if not record["valid"]:
++            return "invalid"
++        if record["exists"]:
++            return "existing"
++        return "new"
++
++    @staticmethod
++    def _natural_sort_key(value: str) -> tuple[tuple[int, object], ...]:
++        """Maak een natuurlijke sorteersleutel voor tekst met getallen."""
++
++        parts = re.split(r"(\d+)", value.casefold())
++        return tuple(
++            (0, int(part)) if part.isdigit() else (1, part)
++            for part in parts
++            if part
++        )
++
+     @staticmethod
+     def _is_empty(value: str | None) -> bool:
+         """Behandel None en alleen-witruimte als lege lokale metadata."""
+diff --git a/app/core/routes.py b/app/core/routes.py
+--- a/app/core/routes.py
++++ b/app/core/routes.py
+@@ -106,6 +106,9 @@ def admin_import_photos():
+     if requested_page is None:
+         requested_page = request.form.get("page", 1, type=int)
+     page = max(requested_page or 1, 1)
++    sort_field = request.form.get("sort_field") or None
++    sort_direction = request.form.get("sort_direction", "asc")
++
+     service = MmImportService()
+     action = request.form.get("action") if request.method == "POST" else None
+
+@@ -192,6 +195,8 @@ def admin_import_photos():
+                     selected_mm_ids=selected_mm_ids,
+                     user_id=current_user.id,
+                     page=page,
++                    sort_field=sort_field,
++                    sort_direction=sort_direction,
+                 )
+                 flash(
+                     f"{import_job.imported_count} foto's zijn als concept toegevoegd; "
+@@ -212,7 +217,12 @@ def admin_import_photos():
+                     "success",
+                 )
+                 return redirect(url_for("web.admin_import_photos"))
+-            preview = service.preview(filters, page=page)
++            preview = service.preview(
++                filters,
++                page=page,
++                sort_field=sort_field,
++                sort_direction=sort_direction,
++            )
+         except FNOError as error:
+             flash(str(error), "error")
+
+@@ -222,6 +232,8 @@ def admin_import_photos():
+         preview=preview,
+         filter_options=filter_options,
+         import_job=import_job,
++        sort_field=sort_field,
++        sort_direction=sort_direction,
+         help_context="admin",
+     )
+diff --git a/app/templates/admin/import_photos.html b/app/templates/admin/import_photos.html
+--- a/app/templates/admin/import_photos.html
++++ b/app/templates/admin/import_photos.html
+@@ -86,6 +86,18 @@
+                 <input type="hidden" name="{{ key }}" value="{{ value }}">
+             {% endfor %}
+             <input type="hidden" name="page" value="{{ preview.page }}">
++            <input
++                type="hidden"
++                name="sort_field"
++                value="{{ sort_field or '' }}"
++            >
++            <input
++                type="hidden"
++                name="sort_direction"
++                value="{{ sort_direction }}"
++            >
+
+             {% if preview.page_count > 1 %}
+                 <nav class="import-pagination" aria-label="Pagina's met MM-resultaten">
+diff --git a/app/static/js/admin/import-preview.js b/app/static/js/admin/import-preview.js
+--- a/app/static/js/admin/import-preview.js
++++ b/app/static/js/admin/import-preview.js
+@@ -83,6 +83,15 @@ class ImportPreviewController {
+         const headerCells = [
+             ...this.preview.querySelectorAll(".import-column-labels th"),
+         ];
++        const form = this.preview.querySelector("[data-import-form]");
++        if (!(form instanceof HTMLFormElement)) return;
++
++        const sortFieldInput = form.querySelector("[name='sort_field']");
++        const sortDirectionInput = form.querySelector(
++            "[name='sort_direction']",
++        );
++        const pageInput = form.querySelector("[name='page']");
+
+         headerCells.forEach((cell, index) => {
+             const field = sortableFields[index];
+@@ -91,38 +100,43 @@ class ImportPreviewController {
+             const button = document.createElement("button");
+             button.type = "button";
+             button.className = "import-sort-button";
+-            button.textContent = "↕";
+-            button.title = "Sorteer deze kolom";
+-            let direction = 1;
++            button.title = "Sorteer alle gevonden foto's op deze kolom";
++
++            const isActive = sortFieldInput?.value === field;
++            const currentDirection = sortDirectionInput?.value === "desc"
++                ? "desc"
++                : "asc";
++
++            button.textContent = isActive
++                ? (currentDirection === "asc" ? "↑" : "↓")
++                : "↕";
+
+             button.addEventListener("click", () => {
+-                this.#sortRows(field, direction);
+-                direction *= -1;
+-                button.textContent = direction === -1 ? "↑" : "↓";
++                if (
++                    !(sortFieldInput instanceof HTMLInputElement)
++                    || !(sortDirectionInput instanceof HTMLInputElement)
++                ) {
++                    return;
++                }
++
++                const sameField = sortFieldInput.value === field;
++                const nextDirection = sameField
++                    && sortDirectionInput.value === "asc"
++                    ? "desc"
++                    : "asc";
++
++                sortFieldInput.value = field;
++                sortDirectionInput.value = nextDirection;
++
++                if (pageInput instanceof HTMLInputElement) {
++                    pageInput.value = "1";
++                }
++
++                form.requestSubmit();
+             });
+             cell.append(button);
+         });
+     }
+
+-    #sortRows(field, direction) {
+-        this.rows.sort((left, right) => direction * this.#sortValue(
+-            left,
+-            field,
+-        ).localeCompare(
+-            this.#sortValue(right, field),
+-            "nl-NL",
+-            { numeric: true },
+-        ));
+-
+-        const body = this.rows[0]?.parentElement;
+-        if (body) {
+-            this.rows.forEach((row) => body.append(row));
+-        }
+-    }
+-
+-    #sortValue(row, field) {
+-        return normalize(row.dataset[datasetKey(field)]);
+-    }
+-
+     #populateFilterOptions() {
+         for (const filter of this.filters) {
+             if (
+diff --git a/tests/test_admin_photo_import.py b/tests/test_admin_photo_import.py
+--- a/tests/test_admin_photo_import.py
++++ b/tests/test_admin_photo_import.py
+@@ -35,6 +35,18 @@ def sample_record() -> dict[str, object]:
+     }
+
+
++def sample_record_with_number(
++    photo_number: str,
++    *,
++    mm_id: str,
++) -> dict[str, object]:
++    """Geef een MM-resultaat met een instelbaar fotonummer."""
++
++    record = sample_record()
++    fields = dict(record["fields"])
++    fields["delving_hubId"] = [mm_id]
++    fields["dc_identifier"] = [photo_number]
++    return {"fields": fields}
++
++
+ def test_import_page_requires_administrator(app, client) -> None:
+     """Een medewerker mag de MM-import niet openen."""
+
+@@ -153,6 +165,45 @@ def test_import_preview_is_paginated(app, client, monkeypatch) -> None:
+     assert b"Volgende 100" in response.data
+
+
++def test_import_preview_sorts_all_results_before_pagination(
++    app,
++    client,
++    monkeypatch,
++) -> None:
++    """Sortering gebeurt over de volledige MM-set vóór paginering."""
++
++    with app.app_context():
++        create_user(role_name="administrator", username="beheerder")
++
++    records = [
++        sample_record_with_number(
++            f"A{number:03d}",
++            mm_id=f"MM-{number:03d}",
++        )
++        for number in range(101, 0, -1)
++    ]
++
++    monkeypatch.setattr(
++        "app.services.memorix_service.MemorixService.search_records",
++        lambda self, filters, rows: records,
++    )
++
++    login(client, "beheerder")
++
++    response = client.post(
++        "/admin/photos/import",
++        data={
++            "action": "preview",
++            "collection_part": "Vortum-Mullem",
++            "sort_field": "photo-number",
++            "sort_direction": "asc",
++            "page_target": "2",
++        },
++    )
++
++    assert response.status_code == 200
++    assert b"Pagina 2 van 2" in response.data
++    assert b"A101" in response.data
++    assert b"A001" not in response.data
++
++
+ def test_administrator_can_supplement_empty_mm_metadata(
+     app, client, monkeypatch
+ ) -> None:
