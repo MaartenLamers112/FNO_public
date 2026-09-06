@@ -72,6 +72,52 @@ def _validate_configuration(app: Flask) -> None:
             "SECRET_KEY ontbreekt. Maak een .env-bestand op basis van .env.example."
         )
 
+    if app.config["DEBUG"] or app.config["TESTING"]:
+        return
+
+    _validate_production_configuration(app)
+
+
+def _validate_production_configuration(app: Flask) -> None:
+    """Weiger onveilige of onvolledige productieconfiguratie."""
+
+    secret_key = str(app.config["SECRET_KEY"])
+    if secret_key == "replace_with_random_secret_key" or len(secret_key) < 32:
+        raise RuntimeError(
+            "SECRET_KEY is niet geschikt voor productie. Gebruik een willekeurige sleutel "
+            "van minimaal 32 tekens."
+        )
+
+    public_base_url = str(app.config.get("PUBLIC_BASE_URL") or "").strip().rstrip("/")
+    if not public_base_url.startswith("https://") or "localhost" in public_base_url.lower():
+        raise RuntimeError(
+            "PUBLIC_BASE_URL moet in productie een publieke HTTPS-URL zijn."
+        )
+
+    use_tls = bool(app.config["MAIL_USE_TLS"])
+    use_ssl = bool(app.config["MAIL_USE_SSL"])
+    if use_tls and use_ssl:
+        raise RuntimeError("MAIL_USE_TLS en MAIL_USE_SSL mogen niet beide actief zijn.")
+
+    if app.config["MAIL_SUPPRESS_SEND"]:
+        return
+
+    missing_mail_settings = [
+        name
+        for name in ("MAIL_SERVER", "MAIL_FROM")
+        if not app.config.get(name)
+    ]
+    if missing_mail_settings:
+        missing = ", ".join(missing_mail_settings)
+        raise RuntimeError(f"SMTP-configuratie is onvolledig: {missing} ontbreekt.")
+
+    username = app.config.get("MAIL_USERNAME")
+    password = app.config.get("MAIL_PASSWORD")
+    if bool(username) != bool(password):
+        raise RuntimeError(
+            "MAIL_USERNAME en MAIL_PASSWORD moeten beide ingesteld of beide leeg zijn."
+        )
+
 
 def _initialize_extensions(app: Flask) -> None:
     """Koppel alle Flask-extensies aan de applicatie."""

@@ -4,93 +4,57 @@
 
 ## Status
 
-| Milestone | Status |
+| Onderdeel | Status |
 |-----------|--------|
-| M1 - Fotopagina | ✅ Gereed |
-| M2 - Landingspagina | ✅ Gereed |
-| M3 - Adminomgeving | ✅ Gereed |
-| Sprint 3.9 - Refactor en opschoning | ✅ Gereed |
-| M4 - MM-vergelijking | ⏳ Volgende milestone |
-| M5 - Productie | ⏳ Gepland |
+| Fotopagina en labeling | ✅ Gereed |
+| Landingspagina | ✅ Gereed |
+| Adminomgeving en MM-import | ✅ Gereed |
+| MM-vergelijking en rapportage | ✅ Gereed |
+| Accountbeheer en rollen | ✅ Gereed |
+| Productieplaatsing | ✅ Gereed |
+| Productie-hardening | 🚧 Actuele batch |
+| Performance en laatste v1.0-polish | ⏳ Hierna |
 
 ---
 
-# M1 - Fotopagina
+# Gereed voor v1.0
 
-## Gereed
-
-- Live Maior Memorix-foto via OpenSeadragon
-- Zoom, pan en fotonavigatie
-- Labels plaatsen, verplaatsen, verwijderen en hernummeren
-- Personenlijst, naamvergrendeling en opmerkingen
-- Lokale metadata met autosave
-- Voortgang en zichtbaarheid
-- Historie, help en contactinformatie
-
----
-
-# M2 - Landingspagina
-
-## Gereed
-
-- Zoeken in lokale en geïmporteerde MM-metadata
-- Voortgangs- en plaatsfilters
-- Drie thumbnailgroottes en lijstweergave
-- Zichtbaarheids- en voortgangsindicatoren
-- Scrollpositie en weergavemodus herstellen
-- Responsive layout en centrale huisstijl
+- OpenSeadragon-fotopagina met labels, namen, opmerkingen en export
+- Lokale FNO-metadata zonder terugschrijven naar Maior Memorix
+- Automatische FNO-MM-vergelijking en vergelijkingrapportage
+- Bulkimport vanuit Maior Memorix/BrabantCloud
+- Rollen `user`, `employee` en `administrator`
+- Registratie en e-mailverificatie
+- Wachtwoordherstel per e-mail
+- Wijzigen van eigen e-mailadres met herverificatie
+- Rolupgrade-aanvragen met beheerdersbeoordeling
+- Stabiele fotolinks en Nederlandse viewer-tooltips
+- Logging, CSRF, Alembic en productieconfiguratie
+- Live plaatsing op een WSGI-host met SQLite
 
 ---
 
-# M3 - Adminomgeving
+# Productie-hardening
 
-## Gereed
+## Doel
 
-- Authenticatie en beheerder-CLI
-- Rollen en autorisatie
-- Beheerdashboard
-- BrabantCloud/MM-facets en bulkimport
-- Selecteerbare, filterbare en sorteerbare importvoorvertoning
-- Publicatie, zichtbaarheid en gereedmelding
-- Lokale FNO-metadata
-- Naamvergrendeling
-- Volledig wijzigingsarchief en CSV-export
-- Stabilisatieronde met 229 geslaagde tests
+De bestaande functionaliteit veilig en reproduceerbaar richting versie 1.0 brengen zonder nieuwe productfunctionaliteit toe te voegen.
 
----
+## Scope
 
-# Sprint 3.9 - Refactor en opschoning
-
-## Gereed
-
-- BrabantCloud-requests en metadata-extractie gecentraliseerd
-- Frontendcontrollers vereenvoudigd
-- Architectuurgrenzen gecontroleerd en met tests bewaakt
-- Dode projectbestanden verwijderd
-- Projectdocumentatie bijgewerkt
+- fail-fast controle op productieconfiguratie
+- regressietests voor kritieke productie-instellingen
+- deployment-, back-up- en herstelprocedure vastleggen
+- account- en autorisatie-edge-cases controleren
+- projectdocumentatie in lijn brengen met de actuele software
 
 ---
 
-# M4 - MM-vergelijking
+# Daarna: laatste v1.0-polish
 
-## Gepland
+- performance van overzicht en grote datasets meten
+- resterende echte UI-regressies oplossen
+- gebruikersacceptatietest op productieomgeving
+- definitieve v1.0 releasecheck en tag
 
-- Lokale FNO-metadata vergelijken met actuele MM-metadata
-- Verschillenoverzicht per foto en per veld
-- Laatste MM-snapshot vernieuwen
-- Beheerworkflow voor handmatige synchronisatie
-- Synchronisatielog en export voor terugverwerking in MM
-
----
-
-# M5 - Productie
-
-## Gepland
-
-- Productieconfiguratie en deployment
-- Logging en monitoring
-- Back-up en herstelprocedure
-- Performancecontrole
-- Beveiligingscontrole
-- Gebruikersacceptatietest
-- Documentatie afronden richting versie 1.0
+Nieuwe ideeën en uitbreidingen blijven buiten v1.0 tenzij ze tijdens de releasecontrole als blocker blijken.

@@ -1,6 +1,6 @@
 # Foto Nummeraar Online (FNO)
 
-Foto Nummeraar Online is een Flask-webapplicatie voor het identificeren van personen op historische foto's. Foto's en officiële bronmetadata blijven live afkomstig uit Maior Memorix/BrabantCloud. FNO bewaart uitsluitend eigen gegevens, zoals labels, namen, opmerkingen, lokale metadata, historie, zichtbaarheid, voortgang, instellingen en gebruikers.
+Foto Nummeraar Online is een Flask-webapplicatie voor het identificeren van personen op historische foto's. Foto's en officiële bronmetadata blijven afkomstig uit Maior Memorix/BrabantCloud. FNO bewaart eigen gegevens, zoals labels, namen, opmerkingen, lokale metadata, historie, zichtbaarheid, voortgang, instellingen en gebruikers. FNO schrijft nooit terug naar Maior Memorix.
 
 ## Technische stack
 
@@ -54,7 +54,7 @@ Maak daarna de eerste beheerder aan:
 flask create-admin
 ```
 
-De minimale wachtwoordlengte is tijdens de ontwikkelfase vier tekens en kan later via configuratie worden aangescherpt.
+De minimale wachtwoordlengte is 8 tekens.
 
 Start de applicatie:
 
@@ -62,13 +62,19 @@ Start de applicatie:
 flask run
 ```
 
+## Productie
+
+FNO blijft provider-onafhankelijk en gebruikt standaard SQLite. Productie start via `wsgi.py` met de productieconfiguratie.
+
+Lees vóór deployment `docs/PRODUCTION_CHECKLIST.md`. Productie weigert te starten met een onveilige voorbeeldsecret, een niet-publieke basis-URL of onvolledige actieve SMTP-configuratie.
+
 ## Kwaliteitscontrole
 
 Voer na iedere wijziging uit:
 
 ```powershell
 git status
-ruff check . --fix
+ruff check .
 ruff format .
 pytest
 git status
@@ -88,7 +94,7 @@ Lokale databases, `.env`, virtuele omgevingen, caches en Git-data worden daarbij
 
 ## Projectstatus
 
-Milestones 1 tot en met 3 en Sprint 3.9 zijn afgerond. De volgende functionele fase is Milestone 4: vergelijking en handmatige synchronisatie van FNO-metadata met Maior Memorix.
+De kernfunctionaliteit voor v1.0 is aanwezig. De actuele fase is productie-hardening en daarna volgen performancecontrole, gebruikersacceptatietest en de definitieve v1.0 releasecheck.
 
 ## Ontwikkeltools
 
@@ -98,6 +104,4 @@ Start het centrale toolmenu vanuit de projectmap:
 .\tools\FNO-Tools.ps1
 ```
 
-Het menu bevat support-ZIP, database-reset, beheerder aanmaken, back-up,
-herstel en de standaard projectcontrole. Destructieve databaseacties maken
-eerst een back-up en vragen expliciete bevestiging.
+Het menu bevat support-ZIP, database-reset, beheerder aanmaken, back-up, herstel en de standaard projectcontrole. Destructieve databaseacties maken eerst een back-up en vragen expliciete bevestiging.

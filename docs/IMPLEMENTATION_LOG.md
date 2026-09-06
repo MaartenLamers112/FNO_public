@@ -12,62 +12,59 @@
 - Alembic
 - SQLite
 
-### Fotopagina
+### Fotopagina en landingspagina
 
-- OpenSeadragon geïntegreerd
-- OverlayManager
-- DragManager
-- Persoonslabels
-- Autosave
-- Historie
-- Opmerkingen
-- Helpmodule
-
-### Landingspagina
-
-- Zoekfunctie
-- Filters
-- Drie thumbnailgroottes
-- Lijstweergave
-- Scrollpositie herstellen
-- Responsive layout
-
-### Huisstijl
-
-- Centrale theme.css
-- Huisstijl afgestemd op vortum-mullem.info
-- Blauwe header
-- Randloze panelen
-- Centrale CSS-variabelen
-
-### Kwaliteit
-
-- Ruff
-- Pytest
-- Stabilisatieronde v0.1
-
-### Adminomgeving
-
-- Authenticatie en beheerder-CLI
-- Rolgebaseerde autorisatie voor labelbeheer
-- Dashboard met publicatiestatussen, open opmerkingen en recente activiteit
-- Labelbeheerknoppen en hernummerpijlen verborgen voor bezoekers
-
+- OpenSeadragon, labels, personenlijst, autosave, historie en opmerkingen
+- Zoeken, filters, thumbnailweergaven en scrollherstel
+- Responsive layout en centrale huisstijl
 
 ### Adminomgeving en MM-import
 
-- Authenticatie, rollen en autorisatie afgerond
-- Beheerdashboard en volledige historie met CSV-export
-- BrabantCloud-facets en bulkimport op onder andere deelcollectie
-- Selecteerbare, filterbare en sorteerbare importvoorvertoning
+- Authenticatie, rollen en autorisatie
+- Beheerdashboard en historie-export
+- BrabantCloud-facets, bulkimport en importvoorvertoning
 - Lokale metadata, zichtbaarheid, voortgang en naamvergrendeling
-- 229 tests geslaagd na stabilisatieronde 3.6.3
 
-### Refactor en opschoning
+### Refactor en kwaliteit
 
 - Backendrequests en metadata-extractie gecentraliseerd
 - Frontendcontrollers vereenvoudigd
 - Databasegebruik buiten repositories verwijderd
-- API gebruikt uitsluitend publieke service-methoden
-- Architectuurcontroles als regressietests toegevoegd
-- Verouderde milestonebestanden en ongebruikte viewer-testafbeeldingen verwijderd
+- API gebruikt publieke service-methoden
+- Architectuurgrenzen als regressietests vastgelegd
+
+## 2026-08
+
+### MM en fotopagina
+
+- MM-beschrijvingsparser en parseranalyse afgerond
+- Vergelijkingsrapport beperkt tot daadwerkelijk geïmporteerde FNO-foto's
+- Personenweergave en labelgrootte uitgebreid
+- OpenVINO-gezichtsdetectie geïntegreerd voor Auto label
+- Export van foto met labels en metadataformaten afgerond
+
+## 2026-09
+
+### Productie en hosting
+
+- FNO provider-onafhankelijk op een WSGI-host geplaatst
+- SQLite/Alembic deployment in productie getest
+- OpenCV/OpenVINO op productiehost getest
+- stabiele fotolinks toegevoegd
+- Nederlandse OpenSeadragon-tooltips toegevoegd
+
+### Accountbeheer
+
+- rollen `user`, `employee` en `administrator`
+- openbare registratie en e-mailverificatie
+- laatste login zichtbaar in gebruikersbeheer
+- wachtwoordherstel per e-mail
+- eigen e-mailadres wijzigen met herverificatie
+- rolupgrade-aanvragen en beheerdersbeoordeling
+
+### Productie-hardening
+
+- productieconfiguratie fail-fast gemaakt voor secret, publieke URL en SMTP
+- regressietests voor kritieke productie-instellingen toegevoegd
+- provider-onafhankelijke deployment-, back-up- en herstelchecklist toegevoegd
+- roadmap en known issues bijgewerkt naar actuele v1.0-status

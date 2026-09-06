@@ -2,14 +2,10 @@
 
 ## Open
 
-### Fotopagina
+### v1.0 releasecontrole
 
-- Bij navigeren met ↑/↓ krijgt het opmerkingenveld soms nog onbedoeld focus.
-- Na toevoegen van een label scrolt het personenpaneel nog niet automatisch naar de nieuwe persoon.
-
-### Maior Memorix
-
-- Terugschrijven naar MM is nog niet beschikbaar; dit volgt in Milestone 4 via een beheerworkflow of export.
+- Performance van het overzicht bij de volledige collectie moet nog gericht worden gemeten.
+- De definitieve gebruikersacceptatietest op de productieomgeving moet nog worden uitgevoerd.
 
 ---
 
@@ -24,6 +20,9 @@
 - Opmerkingen werden niet automatisch bijgewerkt.
 - Hernummeren werkte tegengesteld aan de pijlen.
 - Naam verdween na vergrendelen.
+- Navigeren met ↑/↓ opent opmerkingen zonder het invoerveld onbedoeld focus te geven.
+- Na toevoegen/selecteren van een persoon wordt de selectie in het personenpaneel zichtbaar gemaakt.
+- Stabiele fotolinks en Nederlandse viewer-tooltips zijn toegevoegd.
 
 ### Landingspagina
 
@@ -31,8 +30,13 @@
 - Weergavemodus werd niet onthouden.
 - Zoeken vond geen tekst uit lokale beschrijving of MM-metadata.
 
-### MM-import
+### MM-import en vergelijking
 
 - Deelcollectiefilter leverde nul resultaten.
 - Zoekresultaten werden als ongeldig geïnterpreteerd.
 - Voorvertoning werd niet onthouden.
+- Vergelijkingsrapport bevatte ook niet-geïmporteerde foto's.
+
+### Architectuurregel
+
+FNO schrijft niet terug naar Maior Memorix. MM blijft een read-only bron; eventuele terugverwerking gebeurt buiten FNO via export en handmatige beheerprocessen.
