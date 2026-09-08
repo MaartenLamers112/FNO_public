@@ -116,7 +116,11 @@ class AuthorizationService:
 
     @staticmethod
     def _has_verified_email_when_required() -> bool:
-        """Behoud legacyaccounts en vereis verificatie zodra e-mail bestaat."""
+        """Vereis e-mailverificatie alleen voor gewone gebruikers."""
+
+        role = getattr(current_user, "role", None)
+        if role is not None and role.name in {"employee", "administrator"}:
+            return True
 
         email = getattr(current_user, "email", None)
         if email is None:

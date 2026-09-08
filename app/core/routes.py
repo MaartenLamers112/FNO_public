@@ -100,7 +100,7 @@ def admin_dashboard():
 
 
 @web_blueprint.route("/admin/photos/import", methods=["GET", "POST"])
-@admin_required
+@employee_required
 def admin_import_photos():
     """Zoek en importeer foto's uit Maior Memorix."""
 

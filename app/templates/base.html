@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="nl">
 <head>
     <meta charset="utf-8">
@@ -7,6 +7,7 @@
     <title>{% block title %}Foto Nummeraar Online{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/password-visibility.css') }}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
     {% set endpoint = request.endpoint or '' %}
@@ -115,6 +116,7 @@
     <script type="module" src="{{ url_for('static', filename='js/help-dialog.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/global-navigation.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/account-menu.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/password-visibility.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

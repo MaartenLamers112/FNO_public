@@ -40,6 +40,8 @@ def test_login_page_is_available(client) -> None:
     assert b"Aanmelden" in response.data
     assert b'name="username"' in response.data
     assert b'name="password"' in response.data
+    assert b"password-visibility.css" in response.data
+    assert b"password-visibility.js" in response.data
 
 
 def test_valid_login_starts_session(app, client) -> None:

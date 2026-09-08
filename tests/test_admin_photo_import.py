@@ -52,13 +52,18 @@ def sample_record_with_number(
     return {"fields": fields}
 
 
-def test_import_page_requires_administrator(app, client) -> None:
-    """Een medewerker mag de MM-import niet openen."""
+def test_employee_can_open_import_page(app, client) -> None:
+    """Een medewerker kan de MM-import openen."""
 
     with app.app_context():
         create_user(role_name="employee", username="medewerker")
     login(client, "medewerker")
-    assert client.get("/admin/photos/import").status_code == 403
+
+    response = client.get("/admin/photos/import")
+
+    assert response.status_code == 200
+    assert b"Voorvertoning ophalen" in response.data
+    assert b">Import<" in response.data
 
 
 def test_administrator_can_open_import_page(app, client) -> None:
